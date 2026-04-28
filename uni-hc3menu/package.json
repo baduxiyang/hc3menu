@@ -15,6 +15,14 @@
     "pinia": "2.1.7",
     "vue": "3.4.21"
   },
+  "overrides": {
+    "vue": "3.4.21",
+    "@vue/compiler-core": "3.4.21",
+    "@vue/compiler-dom": "3.4.21",
+    "@vue/compiler-sfc": "3.4.21",
+    "@vue/shared": "3.4.21",
+    "@vue/server-renderer": "3.4.21"
+  },
   "devDependencies": {
     "@dcloudio/types": "3.4.30",
     "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5000820260420001",
