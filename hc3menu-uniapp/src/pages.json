@@ -1,0 +1,109 @@
+{
+	"pages": [
+		{
+			"path": "pages/home/index",
+			"style": {
+				"navigationBarTitleText": "HC3 Menu"
+			}
+		},
+		{
+			"path": "pages/more/index",
+			"style": {
+				"navigationBarTitleText": "更多"
+			}
+		},
+		{
+			"path": "pages/device/index",
+			"style": {
+				"navigationBarTitleText": "设备"
+			}
+		},
+		{
+			"path": "pages/search/index",
+			"style": {
+				"navigationBarTitleText": "Search"
+			}
+		},
+		{
+			"path": "pages/scenes/index",
+			"style": {
+				"navigationBarTitleText": "Scenes"
+			}
+		},
+		{
+			"path": "pages/alarm/index",
+			"style": {
+				"navigationBarTitleText": "Alarm"
+			}
+		},
+		{
+			"path": "pages/profiles/index",
+			"style": {
+				"navigationBarTitleText": "Profiles"
+			}
+		},
+		{
+			"path": "pages/attention/index",
+			"style": {
+				"navigationBarTitleText": "Attention"
+			}
+		},
+		{
+			"path": "pages/activity/index",
+			"style": {
+				"navigationBarTitleText": "Activity"
+			}
+		},
+		{
+			"path": "pages/debug/index",
+			"style": {
+				"navigationBarTitleText": "Debug messages"
+			}
+		},
+		{
+			"path": "pages/diagnostics/index",
+			"style": {
+				"navigationBarTitleText": "Diagnostics"
+			}
+		},
+		{
+			"path": "pages/settings/index",
+			"style": {
+				"navigationBarTitleText": "设置"
+			}
+		},
+		{
+			"path": "pages/favorites/index",
+			"style": {
+				"navigationBarTitleText": "Favorites"
+			}
+		},
+		{
+			"path": "pages/notifications/index",
+			"style": {
+				"navigationBarTitleText": "Notifications"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "HC3 Menu",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"tabBar": {
+		"color": "#666666",
+		"selectedColor": "#007aff",
+		"backgroundColor": "#ffffff",
+		"list": [
+			{
+				"pagePath": "pages/home/index",
+				"text": "Home"
+			},
+			{
+				"pagePath": "pages/more/index",
+				"text": "More"
+			}
+		]
+	}
+}
