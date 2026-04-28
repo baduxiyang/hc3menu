@@ -30,7 +30,7 @@ onPullDownRefresh(refresh)
         <view class="title">Profiles</view>
         <button size="mini" @click="refresh">刷新</button>
       </view>
-      <view class="muted" style="margin-top: 10rpx">activeProfile={{ hc3.activeProfileId ?? "null" }}</view>
+      <view class="muted" style="margin-top: 10rpx">activeProfile={{ hc3.activeProfileId === null ? "null" : hc3.activeProfileId }}</view>
       <view v-if="profiles.length === 0" class="muted" style="margin-top: 10rpx">无 profiles</view>
       <view v-for="p in profiles" :key="p.id" class="profile-row">
         <view>
@@ -54,4 +54,3 @@ onPullDownRefresh(refresh)
   border-bottom: 1rpx solid #eee;
 }
 </style>
-

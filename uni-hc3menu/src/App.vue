@@ -23,10 +23,11 @@ onHide(() => {
 </script>
 
 <template>
-  <slot />
+  <view>
+    <slot />
+  </view>
 </template>
 
 <style lang="scss">
 @import "./uni.scss";
 </style>
-

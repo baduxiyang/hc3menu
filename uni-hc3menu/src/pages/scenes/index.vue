@@ -34,7 +34,7 @@ onPullDownRefresh(refresh)
       <view v-for="s in scenes" :key="s.id" class="scene-row">
         <view>
           <view>{{ s.name || ("Scene " + s.id) }}</view>
-          <view class="muted">id={{ s.id }} · roomID={{ s.roomID ?? "-" }}</view>
+          <view class="muted">id={{ s.id }} · roomID={{ s.roomID == null ? "-" : s.roomID }}</view>
         </view>
         <button size="mini" type="primary" @click="run(Number(s.id))">运行</button>
       </view>
@@ -51,4 +51,3 @@ onPullDownRefresh(refresh)
   border-bottom: 1rpx solid #eee;
 }
 </style>
-
