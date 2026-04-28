@@ -1,0 +1,69 @@
+{
+  "pages": [
+    {
+      "path": "pages/home/index",
+      "style": { "navigationBarTitleText": "HC3" }
+    },
+    {
+      "path": "pages/device/detail",
+      "style": { "navigationBarTitleText": "设备" }
+    },
+    {
+      "path": "pages/scenes/index",
+      "style": { "navigationBarTitleText": "场景" }
+    },
+    {
+      "path": "pages/profiles/index",
+      "style": { "navigationBarTitleText": "情景/配置" }
+    },
+    {
+      "path": "pages/alarm/index",
+      "style": { "navigationBarTitleText": "报警" }
+    },
+    {
+      "path": "pages/attention/index",
+      "style": { "navigationBarTitleText": "关注" }
+    },
+    {
+      "path": "pages/activity/index",
+      "style": { "navigationBarTitleText": "活动" }
+    },
+    {
+      "path": "pages/debug/index",
+      "style": { "navigationBarTitleText": "Debug" }
+    },
+    {
+      "path": "pages/diagnostics/index",
+      "style": { "navigationBarTitleText": "诊断" }
+    },
+    {
+      "path": "pages/search/index",
+      "style": { "navigationBarTitleText": "搜索" }
+    },
+    {
+      "path": "pages/settings/index",
+      "style": { "navigationBarTitleText": "设置" }
+    }
+  ],
+  "tabBar": {
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "设备"
+      },
+      {
+        "pagePath": "pages/scenes/index",
+        "text": "场景"
+      },
+      {
+        "pagePath": "pages/attention/index",
+        "text": "关注"
+      },
+      {
+        "pagePath": "pages/settings/index",
+        "text": "设置"
+      }
+    ]
+  }
+}
+

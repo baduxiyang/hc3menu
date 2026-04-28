@@ -1,0 +1,30 @@
+$page-padding: 24rpx;
+
+.page {
+  padding: $page-padding;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.06);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.muted {
+  color: #666;
+  font-size: 26rpx;
+}
+
+.title {
+  font-size: 34rpx;
+  font-weight: 600;
+}
+

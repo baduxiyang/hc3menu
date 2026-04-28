@@ -1,0 +1,12 @@
+{
+  "name": "HC3 Menu (uni-app)",
+  "appid": "__UNI__HC3MENU__",
+  "description": "A uni-app port of HC3 Menu (Fibaro HC3 controller)",
+  "versionName": "0.1.0",
+  "versionCode": 100,
+  "transformPx": false,
+  "h5": {
+    "title": "HC3 Menu"
+  }
+}
+
