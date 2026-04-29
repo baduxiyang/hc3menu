@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { onHide, onNavigationBarButtonTap, onShow, onTabItemTap } from "@dcloudio/uni-app";
 import DeviceRow from "@/components/DeviceRow.vue";
 import { useHc3Store } from "@/stores/hc3";
@@ -160,6 +160,11 @@ const virtualPages = computed(() => {
   const len = src.length;
   if (!len) return [{ slot: "prev", page: null }, { slot: "cur", page: null }, { slot: "next", page: null }];
   if (len === 1) return [{ slot: "prev", page: src[0] }, { slot: "cur", page: src[0] }, { slot: "next", page: src[0] }];
+  if (len === 2) {
+    const idx = roomIndex.value === 1 ? 1 : 0;
+    const other = idx === 0 ? 1 : 0;
+    return [{ slot: "prev", page: src[other] }, { slot: "cur", page: src[idx] }, { slot: "next", page: src[other] }];
+  }
   const idx = Math.max(0, Math.min(len - 1, roomIndex.value));
   const prev = src[Math.max(0, idx - 1)];
   const cur = src[idx];
@@ -280,15 +285,21 @@ const onSwiperChange = (e: any) => {
 
   const len = roomPages.value.length;
   let next = roomIndex.value;
-  if (cur === 0) next = Math.max(0, next - 1);
-  if (cur === 2) next = Math.min(len - 1, next + 1);
+  if (len === 2) {
+    next = next === 0 ? 1 : 0;
+  } else {
+    if (cur === 0) next = Math.max(0, next - 1);
+    if (cur === 2) next = Math.min(len - 1, next + 1);
+  }
   roomIndex.value = next;
   const key = roomPages.value[next]?.key || "";
   const top = scrollTopByPage.value[key] || 0;
   setHomeTab(top > 8 ? "Back to Top" : "Home");
 
   ignoreSwiperChange.value = true;
-  swiperCurrent.value = 1;
+  nextTick(() => {
+    swiperCurrent.value = 1;
+  });
 };
 
 const openRoomPicker = () => {
