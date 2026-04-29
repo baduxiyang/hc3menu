@@ -35,10 +35,9 @@
           scroll-y
           scroll-with-animation
           class="room-scroll"
-          :scroll-into-view="scrollIntoViewId"
+          :scroll-top="scrollTopCmdByPage[p.key]"
           @scroll="(e: any) => onRoomScroll(p.key, e)"
         >
-          <view :id="`top-${p.key}`"></view>
           <view class="list" v-if="p.devices.length">
             <DeviceRow
               v-for="d in p.devices"
@@ -75,8 +74,8 @@ const settings = useSettingsStore();
 
 const roomIndex = ref(0);
 const sectionIndex = ref(0);
-const scrollIntoViewId = ref("");
 const scrollTopByPage = ref<Record<string, number>>({});
+const scrollTopCmdByPage = ref<Record<string, number | undefined>>({});
 const homeTabText = ref<"Home" | "Back to Top">("Home");
 
 const HOME_TAB_INDEX = 0;
@@ -220,12 +219,14 @@ const onRoomScroll = (key: string, e: any) => {
 const backToTop = () => {
   const key = currentPageKey.value;
   if (!key) return;
-  scrollIntoViewId.value = `top-${key}`;
+  scrollTopCmdByPage.value = { ...scrollTopCmdByPage.value, [key]: 0 };
   scrollTopByPage.value = { ...scrollTopByPage.value, [key]: 0 };
   setHomeTab("Home");
   setTimeout(() => {
-    scrollIntoViewId.value = "";
-  }, 80);
+    const next = { ...scrollTopCmdByPage.value };
+    delete next[key];
+    scrollTopCmdByPage.value = next;
+  }, 120);
 };
 
 onTabItemTap((e) => {
