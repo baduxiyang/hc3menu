@@ -1,14 +1,5 @@
 <template>
   <view class="page">
-    <view class="header">
-      <text class="title">HC3 Menu</text>
-      <view class="header-actions">
-        <view class="icon-btn" @click="goSearch">
-          <text class="icon">⌕</text>
-        </view>
-      </view>
-    </view>
-
     <scroll-view scroll-x class="sections" v-if="displaySections.length">
       <view
         class="sec-item"
@@ -71,7 +62,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { onHide, onShow, onTabItemTap } from "@dcloudio/uni-app";
+import { onHide, onNavigationBarButtonTap, onShow, onTabItemTap } from "@dcloudio/uni-app";
 import DeviceRow from "@/components/DeviceRow.vue";
 import { useHc3Store } from "@/stores/hc3";
 import { useSettingsStore } from "@/stores/settings";
@@ -248,6 +239,10 @@ const doRefresh = async () => {
 
 const goSearch = () => uni.navigateTo({ url: "/pages/search/index" });
 
+onNavigationBarButtonTap((e) => {
+  if (Number(e.index) === 0) goSearch();
+});
+
 const onRefresherRefresh = async (key: string) => {
   if (refresherTriggered.value) return;
   if (key !== currentPageKey.value) return;
@@ -365,36 +360,6 @@ onHide(() => {
   background: #f6f7f9;
   display: flex;
   flex-direction: column;
-}
-.header {
-  margin: 24rpx;
-  padding: 20rpx;
-  background: #fff;
-  border-radius: 16rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.title {
-  font-size: 30rpx;
-  color: #111;
-}
-.header-actions {
-  display: flex;
-  align-items: center;
-}
-.icon-btn {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 999rpx;
-  background: #f0f2f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.icon {
-  font-size: 34rpx;
-  color: #111;
 }
 .sections {
   white-space: nowrap;

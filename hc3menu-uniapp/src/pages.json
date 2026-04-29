@@ -3,7 +3,18 @@
 		{
 			"path": "pages/home/index",
 			"style": {
-				"navigationBarTitleText": "HC3 Menu"
+				"navigationBarTitleText": "HC3 Menu",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [
+							{
+								"type": "search",
+								"float": "right",
+								"color": "#111111"
+							}
+						]
+					}
+				}
 			}
 		},
 		{
