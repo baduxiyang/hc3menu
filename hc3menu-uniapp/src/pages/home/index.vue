@@ -276,7 +276,8 @@ const onRefresherRestore = () => {
 const goRoom = (next: number) => {
   const len = roomPages.value.length;
   if (len <= 1) return;
-  const idx = Math.max(0, Math.min(len - 1, Number(next)));
+  const mod = (n: number, m: number) => ((n % m) + m) % m;
+  const idx = mod(Number(next), len);
   roomIndex.value = idx;
   const key = roomPages.value[idx]?.key || "";
   displayRoomKey.value = key;
