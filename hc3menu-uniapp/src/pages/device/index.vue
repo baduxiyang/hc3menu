@@ -60,6 +60,10 @@
       </view>
     </view>
 
+    <view class="card" v-if="kind === 'device_controller'">
+      <QuickAppUIView :device-id="deviceId" :ui-view="uiView" />
+    </view>
+
     <view class="card" v-if="kind === 'color'">
       <view class="row">
         <text class="label">Color</text>
@@ -133,6 +137,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
+import QuickAppUIView from "@/components/QuickAppUIView.vue";
 import { useHc3Store } from "@/stores/hc3";
 import { useSettingsStore } from "@/stores/settings";
 
@@ -145,10 +150,12 @@ const HUMIDITY_TYPES = new Set(["com.fibaro.humiditySensor"]);
 const MOTION_TYPES = new Set(["com.fibaro.motionSensor"]);
 const THERMOSTAT_TYPES = new Set(["com.fibaro.hvacSystem", "com.fibaro.thermostatDanfoss", "com.fibaro.thermostatHorstmann", "com.fibaro.setPoint"]);
 const COLOR_CONTROLLER_TYPES = new Set(["com.fibaro.colorController"]);
+const DEVICE_CONTROLLER_TYPES = new Set(["com.fibaro.deviceController"]);
 
 const classify = (d: any): string => {
   const t = String(d?.type || "");
   const base = String(d?.baseType || "");
+  if (DEVICE_CONTROLLER_TYPES.has(t) || DEVICE_CONTROLLER_TYPES.has(base)) return "device_controller";
   if (COLOR_CONTROLLER_TYPES.has(t)) return "color";
   if (DIMMER_TYPES.has(t)) return "dimmer";
   if (SWITCH_TYPES.has(t)) return "switch";
@@ -197,6 +204,12 @@ const rawText = computed(() => {
   } catch {
     return String(src);
   }
+});
+
+const uiView = computed(() => {
+  const d = rawDevice.value ?? device.value;
+  const v = d?.properties?.uiView;
+  return Array.isArray(v) ? v : [];
 });
 
 const isFav = computed(() => (settings.config.favorites || []).includes(deviceId.value));

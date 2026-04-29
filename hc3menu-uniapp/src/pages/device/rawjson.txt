@@ -1,0 +1,871 @@
+{
+  "id": 315,
+  "name": "HASS",
+  "roomID": 219,
+  "view": [],
+  "type": "com.fibaro.deviceController",
+  "baseType": "com.fibaro.device",
+  "enabled": true,
+  "visible": true,
+  "isPlugin": true,
+  "parentId": 0,
+  "viewXml": false,
+  "hasUIView": true,
+  "configXml": false,
+  "interfaces": [
+    "quickApp"
+  ],
+  "properties": {
+    "apiVersion": "1.3",
+    "buildNumber": 1,
+    "categories": [
+      "other"
+    ],
+    "dead": false,
+    "deadReason": "",
+    "deviceControlType": 1,
+    "deviceIcon": 389,
+    "deviceRole": "Other",
+    "encrypted": false,
+    "icon": {},
+    "initialInterfaces": [
+      "quickApp"
+    ],
+    "log": "",
+    "logTemp": "",
+    "mainFunction": "",
+    "manufacturer": "",
+    "model": "",
+    "quickAppUuid": "",
+    "quickAppVariables": [
+      {
+        "name": "url",
+        "type": "string",
+        "value": "192.168.110.247:8123"
+      },
+      {
+        "name": "token",
+        "type": "string",
+        "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlMzg0ZjY2YThiODk0YTdmYTI2YzcxNDUyNWU1NDEyZSIsImlhdCI6MTc1NTAyNzUxMiwiZXhwIjoyMDcwMzg3NTEyfQ.LCc9Dpsq_tTwERRPU3wkmpMS3nNMZUdCnQdzdT5K8Uo"
+      },
+      {
+        "name": "auto",
+        "type": "string",
+        "value": "true"
+      },
+      {
+        "name": "debug",
+        "type": "string",
+        "value": "main,wsc,child,color,battery,speaker,send,late"
+      }
+    ],
+    "saveLogs": true,
+    "supportedDeviceRoles": [
+      "Other"
+    ],
+    "typeTemplateInitialized": true,
+    "uiCallbacks": [
+      {
+        "callback": "qaSelected",
+        "eventType": "onToggled",
+        "name": "qaSelect"
+      },
+      {
+        "callback": "classSelected",
+        "eventType": "onToggled",
+        "name": "classSelect"
+      },
+      {
+        "callback": "entitySelected",
+        "eventType": "onToggled",
+        "name": "entitySelect"
+      },
+      {
+        "callback": "buttonA",
+        "eventType": "onReleased",
+        "name": "buttonA"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressDown",
+        "name": "buttonA"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressReleased",
+        "name": "buttonA"
+      },
+      {
+        "callback": "buttonB",
+        "eventType": "onReleased",
+        "name": "buttonB"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressDown",
+        "name": "buttonB"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressReleased",
+        "name": "buttonB"
+      },
+      {
+        "callback": "syncStates",
+        "eventType": "onReleased",
+        "name": "syncStates"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressDown",
+        "name": "syncStates"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressReleased",
+        "name": "syncStates"
+      },
+      {
+        "callback": "restart",
+        "eventType": "onReleased",
+        "name": "restart"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressDown",
+        "name": "restart"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressReleased",
+        "name": "restart"
+      },
+      {
+        "callback": "dumpConfig",
+        "eventType": "onReleased",
+        "name": "dump"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressDown",
+        "name": "dump"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressReleased",
+        "name": "dump"
+      }
+    ],
+    "uiView": [
+      {
+        "components": [
+          {
+            "name": "title",
+            "style": {
+              "weight": "1.0"
+            },
+            "text": "Label (Title)",
+            "type": "label",
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      },
+      {
+        "components": [
+          {
+            "name": "label_ID_2",
+            "style": {
+              "weight": "1.0"
+            },
+            "text": "QuickAppChildren:",
+            "type": "label",
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      },
+      {
+        "components": [
+          {
+            "eventBinding": {
+              "onToggled": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onToggled",
+                      "qaSelect",
+                      "$event.value"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "qaSelect",
+            "options": [],
+            "selectionType": "single",
+            "style": {
+              "weight": "1.0"
+            },
+            "text": "QuickAppChild",
+            "type": "select",
+            "values": [],
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      },
+      {
+        "components": [
+          {
+            "eventBinding": {
+              "onToggled": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onToggled",
+                      "classSelect",
+                      "$event.value"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "classSelect",
+            "options": [],
+            "selectionType": "single",
+            "style": {
+              "weight": "1.0"
+            },
+            "text": "Class",
+            "type": "select",
+            "values": [],
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      },
+      {
+        "components": [
+          {
+            "name": "qaInfo",
+            "style": {
+              "weight": "1.0"
+            },
+            "text": "QA info",
+            "type": "label",
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      },
+      {
+        "components": [
+          {
+            "eventBinding": {
+              "onToggled": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onToggled",
+                      "entitySelect",
+                      "$event.value"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "entitySelect",
+            "options": [],
+            "selectionType": "multi",
+            "style": {
+              "weight": "1.0"
+            },
+            "text": "Entities",
+            "type": "select",
+            "values": [],
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      },
+      {
+        "components": [
+          {
+            "eventBinding": {
+              "onLongPressDown": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressDown",
+                      "buttonA"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onLongPressReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressReleased",
+                      "buttonA"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onReleased",
+                      "buttonA"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "buttonA",
+            "style": {
+              "weight": "0.50"
+            },
+            "text": "Create",
+            "type": "button",
+            "visible": true
+          },
+          {
+            "eventBinding": {
+              "onLongPressDown": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressDown",
+                      "buttonB"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onLongPressReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressReleased",
+                      "buttonB"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onReleased",
+                      "buttonB"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "buttonB",
+            "style": {
+              "weight": "0.50"
+            },
+            "text": "Entity info",
+            "type": "button",
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      },
+      {
+        "components": [
+          {
+            "eventBinding": {
+              "onLongPressDown": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressDown",
+                      "syncStates"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onLongPressReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressReleased",
+                      "syncStates"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onReleased",
+                      "syncStates"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "syncStates",
+            "style": {
+              "weight": "0.33"
+            },
+            "text": "Resync",
+            "type": "button",
+            "visible": true
+          },
+          {
+            "eventBinding": {
+              "onLongPressDown": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressDown",
+                      "restart"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onLongPressReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressReleased",
+                      "restart"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onReleased",
+                      "restart"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "restart",
+            "style": {
+              "weight": "0.33"
+            },
+            "text": "Restart",
+            "type": "button",
+            "visible": true
+          },
+          {
+            "eventBinding": {
+              "onLongPressDown": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressDown",
+                      "dump"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onLongPressReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressReleased",
+                      "dump"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onReleased",
+                      "dump"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "dump",
+            "style": {
+              "weight": "0.33"
+            },
+            "text": "Dump config",
+            "type": "button",
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      },
+      {
+        "components": [
+          {
+            "name": "logLabel",
+            "style": {
+              "weight": "1.0"
+            },
+            "text": "",
+            "type": "label",
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      }
+    ],
+    "useEmbededView": true,
+    "useUiView": true,
+    "userDescription": "",
+    "viewLayout": {
+      "$jason": {
+        "body": {
+          "header": {
+            "style": {
+              "height": "0"
+            },
+            "title": "quickApp_device_315"
+          },
+          "sections": {
+            "items": [
+              {
+                "components": [
+                  {
+                    "name": "title",
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "text": "Label (Title)",
+                    "type": "label",
+                    "visible": true
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              },
+              {
+                "components": [
+                  {
+                    "name": "label_ID_2",
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "text": "QuickAppChildren:",
+                    "type": "label",
+                    "visible": true
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              },
+              {
+                "components": [
+                  {
+                    "name": "qaSelect",
+                    "options": [],
+                    "selectionType": "single",
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "text": "QuickAppChild",
+                    "type": "select",
+                    "values": [],
+                    "visible": true
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              },
+              {
+                "components": [
+                  {
+                    "name": "classSelect",
+                    "options": [],
+                    "selectionType": "single",
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "text": "Class",
+                    "type": "select",
+                    "values": [],
+                    "visible": true
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              },
+              {
+                "components": [
+                  {
+                    "name": "qaInfo",
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "text": "QA info",
+                    "type": "label",
+                    "visible": true
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              },
+              {
+                "components": [
+                  {
+                    "name": "entitySelect",
+                    "options": [],
+                    "selectionType": "multi",
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "text": "Entities",
+                    "type": "select",
+                    "values": [],
+                    "visible": true
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              },
+              {
+                "components": [
+                  {
+                    "components": [
+                      {
+                        "name": "buttonA",
+                        "style": {
+                          "weight": "0.50"
+                        },
+                        "text": "Create",
+                        "type": "button",
+                        "visible": true
+                      },
+                      {
+                        "name": "buttonB",
+                        "style": {
+                          "weight": "0.50"
+                        },
+                        "text": "Entity info",
+                        "type": "button",
+                        "visible": true
+                      }
+                    ],
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "type": "horizontal"
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              },
+              {
+                "components": [
+                  {
+                    "components": [
+                      {
+                        "name": "syncStates",
+                        "style": {
+                          "weight": "0.33"
+                        },
+                        "text": "Resync",
+                        "type": "button",
+                        "visible": true
+                      },
+                      {
+                        "name": "restart",
+                        "style": {
+                          "weight": "0.33"
+                        },
+                        "text": "Restart",
+                        "type": "button",
+                        "visible": true
+                      },
+                      {
+                        "name": "dump",
+                        "style": {
+                          "weight": "0.33"
+                        },
+                        "text": "Dump config",
+                        "type": "button",
+                        "visible": true
+                      }
+                    ],
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "type": "horizontal"
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              },
+              {
+                "components": [
+                  {
+                    "name": "logLabel",
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "text": "",
+                    "type": "label",
+                    "visible": true
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              }
+            ]
+          }
+        },
+        "head": {
+          "title": "quickApp_device_315"
+        }
+      }
+    }
+  },
+  "actions": {},
+  "created": 1755027452,
+  "modified": 1759134421,
+  "sortOrder": 42
+}
