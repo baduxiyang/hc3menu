@@ -14,11 +14,11 @@
 
     <view class="room-bar" v-if="roomPages.length">
       <view class="room-title" @click="openRoomPicker">
-        <text class="room-name">{{ currentPage?.name || "" }}</text>
+        <text class="room-name">{{ displayRoom?.name || "" }}</text>
         <text class="room-caret">▾</text>
       </view>
       <view class="room-meta">
-        <text class="room-meta-text">{{ roomIndex + 1 }} / {{ roomPages.length }}</text>
+        <text class="room-meta-text">{{ displayRoomIndex + 1 }} / {{ roomPages.length }}</text>
       </view>
     </view>
 
@@ -74,6 +74,7 @@ const roomIndex = ref(0);
 const sectionIndex = ref(0);
 const swiperCurrent = ref(1);
 const ignoreSwiperChange = ref(false);
+const displayRoomKey = ref("");
 const scrollTopByPage = ref<Record<string, number>>({});
 const scrollTopCmdByPage = ref<Record<string, number | undefined>>({});
 const scrollViewKeyByPage = ref<Record<string, number | undefined>>({});
@@ -154,6 +155,20 @@ const swiperDisableTouch = computed(() => roomPages.value.length <= 1);
 
 const currentPage = computed(() => roomPages.value[roomIndex.value]);
 const currentPageKey = computed(() => currentPage.value?.key || "");
+const displayRoom = computed(() => {
+  const k = displayRoomKey.value;
+  if (k) {
+    const found = roomPages.value.find((p) => p.key === k);
+    if (found) return found;
+  }
+  return currentPage.value;
+});
+const displayRoomIndex = computed(() => {
+  const k = displayRoom.value?.key;
+  if (!k) return 0;
+  const idx = roomPages.value.findIndex((p) => p.key === k);
+  return idx >= 0 ? idx : 0;
+});
 
 const virtualPages = computed(() => {
   const src = roomPages.value;
@@ -190,10 +205,18 @@ watch(roomPages, (p) => {
   if (!p.length) {
     roomIndex.value = 0;
     swiperCurrent.value = 1;
+    displayRoomKey.value = "";
     return;
   }
   if (roomIndex.value >= p.length) roomIndex.value = 0;
   swiperCurrent.value = 1;
+
+  if (!displayRoomKey.value || !p.some((x) => x.key === displayRoomKey.value)) {
+    displayRoomKey.value = p[roomIndex.value]?.key || p[0]?.key || "";
+  } else {
+    const idx = p.findIndex((x) => x.key === displayRoomKey.value);
+    if (idx >= 0) roomIndex.value = idx;
+  }
 
   const keys = new Set(p.map((x) => x.key));
   const keepNum = (src: Record<string, number>) => {
@@ -278,6 +301,7 @@ const onSwiperChange = (e: any) => {
   if (swiperDisableTouch.value) {
     roomIndex.value = 0;
     swiperCurrent.value = 1;
+    displayRoomKey.value = roomPages.value[0]?.key || "";
     setHomeTab("Home");
     return;
   }
@@ -293,6 +317,7 @@ const onSwiperChange = (e: any) => {
   }
   roomIndex.value = next;
   const key = roomPages.value[next]?.key || "";
+  displayRoomKey.value = key;
   const top = scrollTopByPage.value[key] || 0;
   setHomeTab(top > 8 ? "Back to Top" : "Home");
 
@@ -312,6 +337,7 @@ const openRoomPicker = () => {
       if (idx >= 0 && idx < roomPages.value.length) {
         roomIndex.value = idx;
         swiperCurrent.value = 1;
+        displayRoomKey.value = roomPages.value[idx]?.key || "";
       }
     },
   });
@@ -327,6 +353,7 @@ const onSectionTap = (idx: number) => {
   scrollViewKeyByPage.value = {};
   refresherTriggered.value = false;
   refresherKey.value = "";
+  displayRoomKey.value = roomPages.value[0]?.key || "";
   setHomeTab("Home");
 };
 
