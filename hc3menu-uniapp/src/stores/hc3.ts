@@ -92,7 +92,6 @@ export const useHc3Store = defineStore("hc3", {
   },
   actions: {
     notify(text: string) {
-      if (this.pollStop) return;
       const g: any = globalThis as any;
       const t = String(text || "");
       if (g.plus?.push?.createMessage) {
@@ -102,10 +101,7 @@ export const useHc3Store = defineStore("hc3", {
         } catch {
         }
       }
-      try {
-        uni.showToast({ title: t.slice(0, 20), icon: "none", duration: 3000 });
-      } catch {
-      }
+      uni.showToast({ title: t.slice(0, 20), icon: "none", duration: 3000 });
     },
 
     ensureClient() {
@@ -458,10 +454,7 @@ export const useHc3Store = defineStore("hc3", {
       try {
         await fn();
       } catch (e: any) {
-        try {
-          uni.showToast({ title: e?.message || "操作失败", icon: "none" });
-        } catch {
-        }
+        uni.showToast({ title: e?.message || "操作失败", icon: "none" });
         throw e;
       }
     },
@@ -473,27 +466,7 @@ export const useHc3Store = defineStore("hc3", {
 
     setDimmerValue(deviceId: number, v: number) {
       const client = this.ensureClient();
-      const next = clamp(Math.round(v), 0, 100);
-      const dev = this.devices?.[Number(deviceId)];
-      const props = dev?.properties || {};
-      const curOn = Boolean(props.value) || Boolean(props.state);
-
-      const run = async () => {
-        if (next <= 0) {
-          await client.turnOff(deviceId);
-        } else {
-          if (!curOn) await client.turnOn(deviceId);
-          await client.setValue(deviceId, next);
-        }
-        if (dev) {
-          const p = (dev.properties && typeof dev.properties === "object") ? dev.properties : {};
-          p.value = next;
-          dev.properties = p;
-          this.devices = { ...this.devices, [Number(deviceId)]: dev };
-        }
-      };
-
-      return this.runDeviceAction(run);
+      return this.runDeviceAction(() => client.setValue(deviceId, clamp(Math.round(v), 0, 100)));
     },
 
     shutterOpen(deviceId: number) {
