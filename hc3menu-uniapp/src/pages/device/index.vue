@@ -68,6 +68,17 @@
           <text class="value">{{ colorHex }}</text>
         </view>
       </view>
+      <view class="row col">
+        <text class="label">Channels</text>
+        <view class="chan">
+          <text class="chip">R {{ channels.r }}</text>
+          <text class="chip">G {{ channels.g }}</text>
+          <text class="chip">B {{ channels.b }}</text>
+          <text class="chip">W {{ channels.w }}</text>
+          <text class="chip">WW {{ channels.ww }}</text>
+          <text class="chip">CW {{ channels.cw }}</text>
+        </view>
+      </view>
       <view class="row">
         <text class="label">Brightness</text>
         <text class="value">{{ brightness }}%</text>
@@ -278,16 +289,26 @@ const clamp255 = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
 
 const toHex2 = (n: number) => clamp255(n).toString(16).padStart(2, "0").toUpperCase();
 
-const colorRgb = computed(() => {
+const channels = computed(() => {
   const cc = device.value?.properties?.colorComponents || {};
-  const r0 = Number(cc?.red ?? 0);
-  const g0 = Number(cc?.green ?? 0);
-  const b0 = Number(cc?.blue ?? 0);
-  const ww = Number(cc?.warmWhite ?? 0);
-  const cw = Number(cc?.coldWhite ?? cc?.white ?? 0);
-  const w = Number(cc?.white ?? 0);
-  const w2 = Number(cc?.w ?? 0);
-  const white = Math.max(ww, cw, w, w2);
+  return {
+    r: clamp255(Number(cc?.red ?? 0)),
+    g: clamp255(Number(cc?.green ?? 0)),
+    b: clamp255(Number(cc?.blue ?? 0)),
+    w: clamp255(Number(cc?.white ?? cc?.w ?? 0)),
+    ww: clamp255(Number(cc?.warmWhite ?? 0)),
+    cw: clamp255(Number(cc?.coldWhite ?? 0)),
+  };
+});
+
+const colorRgb = computed(() => {
+  const r0 = channels.value.r;
+  const g0 = channels.value.g;
+  const b0 = channels.value.b;
+  const ww = channels.value.ww;
+  const cw = channels.value.cw;
+  const w = channels.value.w;
+  const white = Math.max(ww, cw, w);
   const mix = Math.max(0, Math.min(1, white / 255));
   const r1 = r0 * (1 - mix) + 255 * mix;
   const g1 = g0 * (1 - mix) + 255 * mix;
@@ -377,6 +398,19 @@ onLoad((q) => {
   height: 36rpx;
   border-radius: 10rpx;
   border: 1rpx solid #e6e6e6;
+}
+.chan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  padding-top: 6rpx;
+}
+.chip {
+  font-size: 22rpx;
+  color: #333;
+  padding: 10rpx 14rpx;
+  border-radius: 999rpx;
+  background: #f0f2f6;
 }
 .picker {
   font-size: 26rpx;
