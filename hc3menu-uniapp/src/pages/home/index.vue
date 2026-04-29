@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { onHide, onNavigationBarButtonTap, onShow, onTabItemTap } from "@dcloudio/uni-app";
 import DeviceRow from "@/components/DeviceRow.vue";
 import { useHc3Store } from "@/stores/hc3";
@@ -271,14 +271,17 @@ const onSwiperChange = (e: any) => {
     setHomeTab("Home");
     return;
   }
-  if (cur === 0) roomIndex.value = Math.max(0, roomIndex.value - 1);
-  if (cur === 2) roomIndex.value = Math.min(roomPages.value.length - 1, roomIndex.value + 1);
-  const key = currentPageKey.value;
+  const len = roomPages.value.length;
+  let next = roomIndex.value;
+  if (cur === 0) next = Math.max(0, next - 1);
+  if (cur === 2) next = Math.min(len - 1, next + 1);
+  roomIndex.value = next;
+  const key = roomPages.value[next]?.key || "";
   const top = scrollTopByPage.value[key] || 0;
   setHomeTab(top > 8 ? "Back to Top" : "Home");
-  setTimeout(() => {
+  nextTick(() => {
     swiperCurrent.value = 1;
-  }, 0);
+  });
 };
 
 const openRoomPicker = () => {
