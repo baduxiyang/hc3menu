@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { onHide, onNavigationBarButtonTap, onShow, onTabItemTap } from "@dcloudio/uni-app";
 import DeviceRow from "@/components/DeviceRow.vue";
 import { useHc3Store } from "@/stores/hc3";
@@ -73,6 +73,7 @@ const settings = useSettingsStore();
 const roomIndex = ref(0);
 const sectionIndex = ref(0);
 const swiperCurrent = ref(1);
+const ignoreSwiperChange = ref(false);
 const scrollTopByPage = ref<Record<string, number>>({});
 const scrollTopCmdByPage = ref<Record<string, number | undefined>>({});
 const scrollViewKeyByPage = ref<Record<string, number | undefined>>({});
@@ -264,6 +265,10 @@ const onRefresherRestore = () => {
 };
 
 const onSwiperChange = (e: any) => {
+  if (ignoreSwiperChange.value) {
+    ignoreSwiperChange.value = false;
+    return;
+  }
   const cur = Number(e?.detail?.current ?? 0);
   if (swiperDisableTouch.value) {
     roomIndex.value = 0;
@@ -271,6 +276,8 @@ const onSwiperChange = (e: any) => {
     setHomeTab("Home");
     return;
   }
+  if (cur === 1) return;
+
   const len = roomPages.value.length;
   let next = roomIndex.value;
   if (cur === 0) next = Math.max(0, next - 1);
@@ -279,9 +286,9 @@ const onSwiperChange = (e: any) => {
   const key = roomPages.value[next]?.key || "";
   const top = scrollTopByPage.value[key] || 0;
   setHomeTab(top > 8 ? "Back to Top" : "Home");
-  nextTick(() => {
-    swiperCurrent.value = 1;
-  });
+
+  ignoreSwiperChange.value = true;
+  swiperCurrent.value = 1;
 };
 
 const openRoomPicker = () => {
