@@ -35,9 +35,11 @@
           scroll-y
           scroll-with-animation
           class="room-scroll"
+          :scroll-into-view="scrollIntoViewId"
           :scroll-top="scrollTopCmdByPage[p.key]"
           @scroll="(e: any) => onRoomScroll(p.key, e)"
         >
+          <view class="top-anchor" :id="`top-${p.key}`"></view>
           <view class="list" v-if="p.devices.length">
             <DeviceRow
               v-for="d in p.devices"
@@ -74,6 +76,7 @@ const settings = useSettingsStore();
 
 const roomIndex = ref(0);
 const sectionIndex = ref(0);
+const scrollIntoViewId = ref("");
 const scrollTopByPage = ref<Record<string, number>>({});
 const scrollTopCmdByPage = ref<Record<string, number | undefined>>({});
 const homeTabText = ref<"Home" | "Back to Top">("Home");
@@ -219,13 +222,20 @@ const onRoomScroll = (key: string, e: any) => {
 const backToTop = () => {
   const key = currentPageKey.value;
   if (!key) return;
-  scrollTopCmdByPage.value = { ...scrollTopCmdByPage.value, [key]: 0 };
+  scrollIntoViewId.value = "";
+  scrollTopCmdByPage.value = { ...scrollTopCmdByPage.value, [key]: 1 };
   scrollTopByPage.value = { ...scrollTopByPage.value, [key]: 0 };
   setHomeTab("Home");
+  setTimeout(() => {
+    scrollTopCmdByPage.value = { ...scrollTopCmdByPage.value, [key]: 0 };
+    scrollIntoViewId.value = `top-${key}`;
+  }, 30);
+
   setTimeout(() => {
     const next = { ...scrollTopCmdByPage.value };
     delete next[key];
     scrollTopCmdByPage.value = next;
+    scrollIntoViewId.value = "";
   }, 120);
 };
 
@@ -352,6 +362,9 @@ onHide(() => {
 }
 .room-scroll {
   height: 100%;
+}
+.top-anchor {
+  height: 1px;
 }
 .list {
   background: #fff;
