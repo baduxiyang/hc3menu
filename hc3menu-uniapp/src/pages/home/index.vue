@@ -22,46 +22,46 @@
       </view>
     </view>
 
-    <swiper class="swiper" :current="swiperCurrent" :disable-touch="swiperDisableTouch" @animationfinish="onSwiperFinish">
-      <swiper-item v-for="v in virtualPages" :key="v.slot">
-        <scroll-view
-          v-if="v.page"
-          :key="`${v.slot}:${v.page.key}:${scrollViewKeyByPage[v.page.key] || 0}`"
-          scroll-y
-          class="room-scroll"
-          :scroll-top="scrollTopCmdByPage[v.page.key]"
-          refresher-enabled
-          :refresher-triggered="refresherTriggered && refresherKey === v.page.key"
-          @refresherrefresh="() => onRefresherRefresh(v.page!.key)"
-          @refresherrestore="onRefresherRestore"
-          @refresherabort="onRefresherRestore"
-          @scroll="(e: any) => onRoomScroll(v.page!.key, e)"
-        >
-          <view class="list" v-if="v.page.devices.length">
-            <DeviceRow
-              v-for="d in v.page.devices"
-              :key="d.id"
-              :device="d"
-              :is-favorite="isFavorite(d.id)"
-              @open="openDevice"
-              @toggle-fav="toggleFav"
-            />
-          </view>
-          <view class="empty" v-else>
-            <text>暂无设备</text>
-          </view>
-          <view class="footer-space"></view>
-        </scroll-view>
-        <view v-else class="empty full">
-          <text>暂无房间或设备</text>
+    <view class="swiper" v-if="currentPage">
+      <scroll-view
+        :key="`${currentPage.key}:${scrollViewKeyByPage[currentPage.key] || 0}`"
+        scroll-y
+        class="room-scroll"
+        :scroll-top="scrollTopCmdByPage[currentPage.key]"
+        refresher-enabled
+        :refresher-triggered="refresherTriggered && refresherKey === currentPage.key"
+        @refresherrefresh="() => onRefresherRefresh(currentPage!.key)"
+        @refresherrestore="onRefresherRestore"
+        @refresherabort="onRefresherRestore"
+        @scroll="(e: any) => onRoomScroll(currentPage!.key, e)"
+        @touchstart="onTouchStart"
+        @touchend="onTouchEnd"
+      >
+        <view class="list" v-if="currentPage.devices.length">
+          <DeviceRow
+            v-for="d in currentPage.devices"
+            :key="d.id"
+            :device="d"
+            :is-favorite="isFavorite(d.id)"
+            @open="openDevice"
+            @toggle-fav="toggleFav"
+          />
         </view>
-      </swiper-item>
-    </swiper>
+        <view class="empty" v-else>
+          <text>暂无设备</text>
+        </view>
+        <view class="footer-space"></view>
+      </scroll-view>
+    </view>
+
+    <view class="empty" v-else>
+      <text>暂无房间或设备</text>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { onHide, onNavigationBarButtonTap, onShow, onTabItemTap } from "@dcloudio/uni-app";
 import DeviceRow from "@/components/DeviceRow.vue";
 import { useHc3Store } from "@/stores/hc3";
@@ -72,8 +72,9 @@ const settings = useSettingsStore();
 
 const roomIndex = ref(0);
 const sectionIndex = ref(0);
-const swiperCurrent = ref(1);
-const swiperResetting = ref(false);
+const swipeStartX = ref(0);
+const swipeStartY = ref(0);
+const swipeStartMs = ref(0);
 const displayRoomKey = ref("");
 const scrollTopByPage = ref<Record<string, number>>({});
 const scrollTopCmdByPage = ref<Record<string, number | undefined>>({});
@@ -152,8 +153,7 @@ const roomPages = computed<RoomPage[]>(() => {
 });
 
 const swiperDisableTouch = computed(() => roomPages.value.length <= 1);
-
-const currentPage = computed(() => roomPages.value[roomIndex.value]);
+const currentPage = computed(() => roomPages.value[roomIndex.value] || null);
 const currentPageKey = computed(() => currentPage.value?.key || "");
 const displayRoom = computed(() => {
   const k = displayRoomKey.value;
@@ -168,19 +168,6 @@ const displayRoomIndex = computed(() => {
   if (!k) return 0;
   const idx = roomPages.value.findIndex((p) => p.key === k);
   return idx >= 0 ? idx : 0;
-});
-
-const virtualPages = computed(() => {
-  const src = roomPages.value;
-  const len = src.length;
-  if (!len) return [{ slot: "prev", page: null }, { slot: "cur", page: null }, { slot: "next", page: null }];
-  if (len === 1) return [{ slot: "prev", page: src[0] }, { slot: "cur", page: src[0] }, { slot: "next", page: src[0] }];
-  const idx = Math.max(0, Math.min(len - 1, roomIndex.value));
-  const cur = src[idx];
-  const mod = (n: number, m: number) => ((n % m) + m) % m;
-  const prev = src[mod(idx - 1, len)];
-  const next = src[mod(idx + 1, len)];
-  return [{ slot: "prev", page: prev }, { slot: "cur", page: cur }, { slot: "next", page: next }];
 });
 
 let backToTopTimer1: number | null = null;
@@ -200,12 +187,10 @@ const clearBackToTopTimers = () => {
 watch(roomPages, (p) => {
   if (!p.length) {
     roomIndex.value = 0;
-    swiperCurrent.value = 1;
     displayRoomKey.value = "";
     return;
   }
   if (roomIndex.value >= p.length) roomIndex.value = 0;
-  swiperCurrent.value = 1;
 
   if (!displayRoomKey.value || !p.some((x) => x.key === displayRoomKey.value)) {
     displayRoomKey.value = p[roomIndex.value]?.key || p[0]?.key || "";
@@ -288,42 +273,49 @@ const onRefresherRestore = () => {
   refresherKey.value = "";
 };
 
-const resetSwiperToCenter = () => {
-  if (swiperResetting.value) return;
-  swiperResetting.value = true;
-  nextTick(() => {
-    swiperCurrent.value = 1;
-    setTimeout(() => {
-      swiperResetting.value = false;
-    }, 80);
-  });
-};
-
-const onSwiperFinish = (e: any) => {
-  if (swiperResetting.value) return;
-  if (swiperDisableTouch.value) {
-    roomIndex.value = 0;
-    swiperCurrent.value = 1;
-    displayRoomKey.value = roomPages.value[0]?.key || "";
-    setHomeTab("Home");
-    return;
-  }
-
-  const cur = Number(e?.detail?.current ?? 1);
-  if (cur === 1) return;
-
+const goRoom = (next: number) => {
   const len = roomPages.value.length;
-  let next = roomIndex.value;
-  const mod = (n: number, m: number) => ((n % m) + m) % m;
-  if (cur === 0) next = mod(next - 1, len);
-  if (cur === 2) next = mod(next + 1, len);
-
-  roomIndex.value = next;
-  const key = roomPages.value[next]?.key || "";
+  if (len <= 1) return;
+  const idx = Math.max(0, Math.min(len - 1, Number(next)));
+  roomIndex.value = idx;
+  const key = roomPages.value[idx]?.key || "";
   displayRoomKey.value = key;
   const top = scrollTopByPage.value[key] || 0;
   setHomeTab(top > 8 ? "Back to Top" : "Home");
-  resetSwiperToCenter();
+  scrollTopCmdByPage.value = { ...scrollTopCmdByPage.value, [key]: 1 };
+  setTimeout(() => {
+    scrollTopCmdByPage.value = { ...scrollTopCmdByPage.value, [key]: 0 };
+    const cur = Number(scrollViewKeyByPage.value[key] ?? 0);
+    scrollViewKeyByPage.value = { ...scrollViewKeyByPage.value, [key]: cur + 1 };
+  }, 30);
+  setTimeout(() => {
+    const nextTop = { ...scrollTopCmdByPage.value };
+    delete nextTop[key];
+    scrollTopCmdByPage.value = nextTop;
+  }, 160);
+};
+
+const onTouchStart = (e: any) => {
+  const t = e?.touches?.[0];
+  if (!t) return;
+  swipeStartX.value = Number(t.clientX ?? 0);
+  swipeStartY.value = Number(t.clientY ?? 0);
+  swipeStartMs.value = Date.now();
+};
+
+const onTouchEnd = (e: any) => {
+  if (swiperDisableTouch.value) return;
+  const t = e?.changedTouches?.[0];
+  if (!t) return;
+  const dx = Number(t.clientX ?? 0) - swipeStartX.value;
+  const dy = Number(t.clientY ?? 0) - swipeStartY.value;
+  const adx = Math.abs(dx);
+  const ady = Math.abs(dy);
+  if (adx < 60) return;
+  if (ady > adx * 0.6) return;
+  if (Date.now() - swipeStartMs.value > 800) return;
+  if (dx < 0) goRoom(roomIndex.value + 1);
+  else goRoom(roomIndex.value - 1);
 };
 
 const openRoomPicker = () => {
@@ -333,11 +325,7 @@ const openRoomPicker = () => {
     itemList: items,
     success: (res: any) => {
       const idx = Number(res.tapIndex ?? -1);
-      if (idx >= 0 && idx < roomPages.value.length) {
-        roomIndex.value = idx;
-        swiperCurrent.value = 1;
-        displayRoomKey.value = roomPages.value[idx]?.key || "";
-      }
+      if (idx >= 0 && idx < roomPages.value.length) goRoom(idx);
     },
   });
 };
@@ -346,13 +334,12 @@ const onSectionTap = (idx: number) => {
   clearBackToTopTimers();
   sectionIndex.value = Number(idx) || 0;
   roomIndex.value = 0;
-  swiperCurrent.value = 1;
   scrollTopCmdByPage.value = {};
   scrollTopByPage.value = {};
   scrollViewKeyByPage.value = {};
   refresherTriggered.value = false;
   refresherKey.value = "";
-  displayRoomKey.value = roomPages.value[0]?.key || "";
+  displayRoomKey.value = "";
   setHomeTab("Home");
 };
 
