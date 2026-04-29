@@ -29,8 +29,8 @@
       </view>
     </view>
 
-    <swiper class="swiper" :current="roomIndex" @change="onSwiperChange" v-if="roomPages.length">
-      <swiper-item v-for="p in roomPages" :key="p.key">
+    <swiper class="swiper" :current="roomIndex" :disable-touch="swiperDisableTouch" @change="onSwiperChange" v-if="swiperPages.length">
+      <swiper-item v-for="p in swiperPages" :key="p.key">
         <scroll-view
           :key="`${p.key}:${scrollViewKeyByPage[p.key] || 0}`"
           scroll-y
@@ -138,6 +138,17 @@ const roomPages = computed<RoomPage[]>(() => {
   return pages;
 });
 
+const swiperPages = computed<RoomPage[]>(() => {
+  if (roomPages.value.length >= 2) return roomPages.value;
+  if (roomPages.value.length === 1) return [...roomPages.value, { key: "__pad__", name: "", devices: [] }];
+  return [
+    { key: "__empty_1__", name: "", devices: [] },
+    { key: "__empty_2__", name: "", devices: [] },
+  ];
+});
+
+const swiperDisableTouch = computed(() => roomPages.value.length <= 1);
+
 const currentPage = computed(() => roomPages.value[roomIndex.value]);
 const currentPageKey = computed(() => currentPage.value?.key || "");
 
@@ -216,6 +227,11 @@ const goSearch = () => uni.navigateTo({ url: "/pages/search/index" });
 
 const onSwiperChange = (e: any) => {
   const cur = Number(e?.detail?.current ?? 0);
+  if (swiperDisableTouch.value) {
+    roomIndex.value = 0;
+    setHomeTab("Home");
+    return;
+  }
   if (Number.isFinite(cur)) roomIndex.value = cur;
   const key = roomPages.value[cur]?.key || "";
   const top = scrollTopByPage.value[key] || 0;
