@@ -128,21 +128,19 @@ import { onLoad } from "@dcloudio/uni-app";
 import { useHc3Store } from "@/stores/hc3";
 import { useSettingsStore } from "@/stores/settings";
 
-const SWITCH_TYPES = new Set(["com.fibaro.binaryswitch", "com.fibaro.developer.bxt.binaryswitch", "com.fibaro.fgwp101", "com.fibaro.fgwp102"]);
-const DIMMER_TYPES = new Set(["com.fibaro.multilevelswitch", "com.fibaro.fgd212"]);
-const SHUTTER_TYPES = new Set(["com.fibaro.fgrm222", "com.fibaro.rollershutter", "com.fibaro.baseshutter"]);
-const TEMP_SENSOR_TYPES = new Set(["com.fibaro.temperaturesensor"]);
-const LUX_SENSOR_TYPES = new Set(["com.fibaro.lightsensor"]);
-const HUMIDITY_TYPES = new Set(["com.fibaro.humiditysensor"]);
-const MOTION_TYPES = new Set(["com.fibaro.motionsensor"]);
-const THERMOSTAT_TYPES = new Set(["com.fibaro.hvacsystem", "com.fibaro.thermostatdanfoss", "com.fibaro.thermostathorstmann", "com.fibaro.setpoint"]);
-const COLOR_CONTROLLER_TYPES = new Set(["com.fibaro.colorcontroller"]);
-
-const normType = (s: any) => String(s || "").trim().toLowerCase();
+const SWITCH_TYPES = new Set(["com.fibaro.binarySwitch", "com.fibaro.developer.bxt.binarySwitch", "com.fibaro.FGWP101", "com.fibaro.FGWP102"]);
+const DIMMER_TYPES = new Set(["com.fibaro.multilevelSwitch", "com.fibaro.FGD212"]);
+const SHUTTER_TYPES = new Set(["com.fibaro.FGRM222", "com.fibaro.rollerShutter", "com.fibaro.baseShutter"]);
+const TEMP_SENSOR_TYPES = new Set(["com.fibaro.temperatureSensor"]);
+const LUX_SENSOR_TYPES = new Set(["com.fibaro.lightSensor"]);
+const HUMIDITY_TYPES = new Set(["com.fibaro.humiditySensor"]);
+const MOTION_TYPES = new Set(["com.fibaro.motionSensor"]);
+const THERMOSTAT_TYPES = new Set(["com.fibaro.hvacSystem", "com.fibaro.thermostatDanfoss", "com.fibaro.thermostatHorstmann", "com.fibaro.setPoint"]);
+const COLOR_CONTROLLER_TYPES = new Set(["com.fibaro.colorController"]);
 
 const classify = (d: any): string => {
-  const t = normType(d?.type);
-  const base = normType(d?.baseType);
+  const t = String(d?.type || "");
+  const base = String(d?.baseType || "");
   if (COLOR_CONTROLLER_TYPES.has(t) || COLOR_CONTROLLER_TYPES.has(base)) return "color";
   if (SWITCH_TYPES.has(t) || SWITCH_TYPES.has(base)) return "switch";
   if (DIMMER_TYPES.has(t) || DIMMER_TYPES.has(base)) return "dimmer";
