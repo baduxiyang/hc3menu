@@ -526,6 +526,30 @@ export const useHc3Store = defineStore("hc3", {
       return this.runDeviceAction(() => client.setThermostatSetpoint(deviceId, t, m));
     },
 
+    setFanMode(deviceId: number, mode: string) {
+      const client = this.ensureClient();
+      const dev = this.devices?.[Number(deviceId)];
+      if (dev) {
+        const props = (dev.properties && typeof dev.properties === "object") ? dev.properties : {};
+        props.fanMode = String(mode);
+        dev.properties = props;
+        this.devices = { ...this.devices, [Number(deviceId)]: dev };
+      }
+      return this.runDeviceAction(() => client.setFanMode(deviceId, String(mode)));
+    },
+
+    setFanSpeed(deviceId: number, speed: number | string) {
+      const client = this.ensureClient();
+      const dev = this.devices?.[Number(deviceId)];
+      if (dev) {
+        const props = (dev.properties && typeof dev.properties === "object") ? dev.properties : {};
+        props.fanSpeed = speed;
+        dev.properties = props;
+        this.devices = { ...this.devices, [Number(deviceId)]: dev };
+      }
+      return this.runDeviceAction(() => client.setFanSpeed(deviceId, speed));
+    },
+
     setThermostat(deviceId: number, temp: number, mode: "Heat" | "Cool") {
       return this.setThermostatSetpoint(deviceId, temp, mode);
     },

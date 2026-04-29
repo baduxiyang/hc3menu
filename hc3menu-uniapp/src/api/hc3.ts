@@ -108,6 +108,14 @@ export class HC3Client {
     return this.callAction(deviceId, "setThermostatMode", [String(mode)]);
   }
 
+  setFanMode(deviceId: number, mode: string) {
+    return this.callAction(deviceId, "setFanMode", [String(mode)]);
+  }
+
+  setFanSpeed(deviceId: number, speed: number | string) {
+    return this.callAction(deviceId, "setFanSpeed", [speed]);
+  }
+
   setColor(deviceId: number, r: number, g: number, b: number, w: number = 0) {
     return this.callAction(deviceId, "setColor", [Number(r), Number(g), Number(b), Number(w)]);
   }

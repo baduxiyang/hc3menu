@@ -51,6 +51,12 @@
           <view class="picker">{{ thermoMode }}</view>
         </picker>
       </view>
+      <view class="row" v-if="fanSupported">
+        <text class="label">Fan</text>
+        <picker :range="fanOptions" :value="fanIndex" @change="onFanPick">
+          <view class="picker">{{ fanValueLabel }}</view>
+        </picker>
+      </view>
       <view class="row col">
         <text class="label">Setpoint {{ thermoSetpoint }}°{{ thermoUnit }}</text>
         <slider
@@ -309,6 +315,44 @@ const thermoPresets = computed(() => {
   const max = Number(thermoMax.value);
   return preset.filter((x) => x >= min && x <= max);
 });
+
+const fanOptions = computed(() => {
+  const p = device.value?.properties || {};
+  const ms = p.supportedFanModes;
+  if (Array.isArray(ms) && ms.length) return ms.map((x: any) => String(x));
+  const ss = p.supportedFanSpeeds;
+  if (Array.isArray(ss) && ss.length) return ss.map((x: any) => String(x));
+  return [];
+});
+
+const fanSupported = computed(() => {
+  const d = rawDevice.value ?? device.value;
+  const a = d?.actions || {};
+  const hasAction = Boolean(a.setFanMode || a.setFanSpeed);
+  return fanOptions.value.length > 0 && hasAction;
+});
+
+const fanValueLabel = computed(() => {
+  const p = device.value?.properties || {};
+  const v = p.fanMode ?? p.fanSpeed;
+  return v != null && String(v) ? String(v) : "请选择";
+});
+
+const fanIndex = computed(() => {
+  const v = fanValueLabel.value;
+  const idx = fanOptions.value.indexOf(String(v));
+  return idx >= 0 ? idx : 0;
+});
+
+const onFanPick = (e: any) => {
+  const idx = Number(e.detail.value ?? 0);
+  const next = fanOptions.value[idx];
+  if (!next) return;
+  const d = rawDevice.value ?? device.value;
+  const a = d?.actions || {};
+  if (a.setFanMode) hc3.setFanMode(deviceId.value, next).catch(() => {});
+  else if (a.setFanSpeed) hc3.setFanSpeed(deviceId.value, next).catch(() => {});
+};
 
 const thermoLastSentMs = ref(0);
 const setThermoSetpoint = (v: number, throttle: boolean) => {
