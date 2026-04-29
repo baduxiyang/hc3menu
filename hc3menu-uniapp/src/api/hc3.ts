@@ -100,6 +100,14 @@ export class HC3Client {
     return this.callAction(deviceId, action, [Number(value)]);
   }
 
+  setAutoThermostatSetpoint(deviceId: number, value: number) {
+    return this.callAction(deviceId, "setAutoThermostatSetpoint", [Number(value)]);
+  }
+
+  setThermostatMode(deviceId: number, mode: string) {
+    return this.callAction(deviceId, "setThermostatMode", [String(mode)]);
+  }
+
   setColor(deviceId: number, r: number, g: number, b: number, w: number = 0) {
     return this.callAction(deviceId, "setColor", [Number(r), Number(g), Number(b), Number(w)]);
   }

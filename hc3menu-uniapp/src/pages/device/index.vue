@@ -47,21 +47,25 @@
     <view class="card" v-if="kind === 'thermostat'">
       <view class="row">
         <text class="label">Mode</text>
-        <picker :range="['Heat','Cool']" :value="modeIndex" @change="onModePick">
-          <view class="picker">{{ mode }}</view>
+        <picker :range="supportedThermostatModes" :value="thermoModeIndex" @change="onThermoModePick">
+          <view class="picker">{{ thermoMode }}</view>
         </picker>
       </view>
       <view class="row col">
-        <text class="label">Setpoint {{ setpoint }}</text>
-        <slider :value="Number(setpoint)" min="10" max="30" @change="onSetpointSlider" />
+        <text class="label">Setpoint {{ thermoSetpoint }}°{{ thermoUnit }}</text>
+        <slider
+          :value="thermoSetpoint"
+          :min="thermoMin"
+          :max="thermoMax"
+          :step="thermoStep"
+          :disabled="thermoMode === 'Off'"
+          @changing="onThermoSetpointChanging"
+          @change="onThermoSetpointChange"
+        />
       </view>
       <view class="row preset">
-        <button v-for="v in [18,20,22,24,26]" :key="v" size="mini" @click="applyThermostat(v)">{{ v }}°</button>
+        <button v-for="v in thermoPresets" :key="v" size="mini" :disabled="thermoMode === 'Off'" @click="applyThermostat(v)">{{ v }}°</button>
       </view>
-    </view>
-
-    <view class="card" v-if="kind === 'device_controller'">
-      <QuickAppUIView :device-id="deviceId" :ui-view="uiView" />
     </view>
 
     <view class="card" v-if="kind === 'color'">
@@ -116,6 +120,10 @@
         <text class="label">State</text>
         <text class="value">{{ String(device?.properties?.state) }}</text>
       </view>
+    </view>
+
+    <view class="card" v-if="uiView.length">
+      <QuickAppUIView :device-id="deviceId" :ui-view="uiView" />
     </view>
 
     <view class="card">
@@ -189,8 +197,6 @@ const hc3 = useHc3Store();
 const settings = useSettingsStore();
 
 const deviceId = ref(0);
-const mode = ref<"Heat" | "Cool">("Heat");
-const setpoint = ref<number>(22);
 const hex = ref("");
 const rawDevice = ref<any | null>(null);
 
@@ -239,20 +245,91 @@ const onSliderChange = (e: any) => {
   setValue(v);
 };
 
-const modeIndex = computed(() => (mode.value === "Heat" ? 0 : 1));
-const onModePick = (e: any) => {
-  mode.value = Number(e.detail.value) === 1 ? "Cool" : "Heat";
+const thermoUnit = computed(() => String(device.value?.properties?.unit || "C"));
+const supportedThermostatModes = computed(() => {
+  const ms = device.value?.properties?.supportedThermostatModes;
+  if (Array.isArray(ms) && ms.length) return ms.map((x: any) => String(x));
+  return ["Heat", "Cool"];
+});
+const thermoMode = computed(() => {
+  const m = String(device.value?.properties?.thermostatMode || "");
+  if (m && supportedThermostatModes.value.includes(m)) return m;
+  return supportedThermostatModes.value[0] || "Heat";
+});
+const thermoModeIndex = computed(() => Math.max(0, supportedThermostatModes.value.indexOf(thermoMode.value)));
+const onThermoModePick = (e: any) => {
+  const idx = Number(e.detail.value ?? 0);
+  const next = supportedThermostatModes.value[idx] || supportedThermostatModes.value[0] || "Heat";
+  hc3.setThermostatMode(deviceId.value, next as any).catch(() => {});
 };
 
-const applyThermostat = (t: number) => {
-  setpoint.value = Number(t);
-  hc3.setThermostat(deviceId.value, Number(t), mode.value).catch(() => {});
+const thermoSetpoint = computed(() => {
+  const p = device.value?.properties || {};
+  if (thermoMode.value === "Auto") return Number(p.autoThermostatSetpoint ?? 0);
+  if (thermoMode.value === "Heat") return Number(p.heatingThermostatSetpoint ?? 0);
+  if (thermoMode.value === "Cool") return Number(p.coolingThermostatSetpoint ?? 0);
+  return 0;
+});
+
+const thermoMin = computed(() => {
+  const p = device.value?.properties || {};
+  if (thermoMode.value === "Auto") return Number(p.autoThermostatSetpointCapabilitiesMin ?? 4);
+  if (thermoMode.value === "Heat") return Number(p.heatingThermostatSetpointCapabilitiesMin ?? 4);
+  if (thermoMode.value === "Cool") return Number(p.coolingThermostatSetpointCapabilitiesMin ?? 4);
+  return 0;
+});
+
+const thermoMax = computed(() => {
+  const p = device.value?.properties || {};
+  if (thermoMode.value === "Auto") return Number(p.autoThermostatSetpointCapabilitiesMax ?? 30);
+  if (thermoMode.value === "Heat") return Number(p.heatingThermostatSetpointCapabilitiesMax ?? 30);
+  if (thermoMode.value === "Cool") return Number(p.coolingThermostatSetpointCapabilitiesMax ?? 30);
+  return 0;
+});
+
+const thermoStep = computed(() => {
+  const p = device.value?.properties || {};
+  const unit = thermoUnit.value;
+  const stepFrom = (obj: any) => {
+    if (!obj || typeof obj !== "object") return null;
+    const v = Number(obj[unit]);
+    return Number.isFinite(v) && v > 0 ? v : null;
+  };
+  let step: number | null = null;
+  if (thermoMode.value === "Auto") step = stepFrom(p.autoThermostatSetpointStep);
+  if (thermoMode.value === "Heat") step = stepFrom(p.heatingThermostatSetpointStep);
+  if (thermoMode.value === "Cool") step = stepFrom(p.coolingThermostatSetpointStep);
+  if (step != null) return step;
+  return unit === "F" ? 1 : 0.5;
+});
+
+const thermoPresets = computed(() => {
+  const preset = [18, 20, 22, 24, 26];
+  const min = Number(thermoMin.value);
+  const max = Number(thermoMax.value);
+  return preset.filter((x) => x >= min && x <= max);
+});
+
+const thermoLastSentMs = ref(0);
+const setThermoSetpoint = (v: number, throttle: boolean) => {
+  if (thermoMode.value === "Off") return;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return;
+  const next = Math.max(thermoMin.value, Math.min(thermoMax.value, n));
+  if (throttle) {
+    const now = Date.now();
+    if (now - thermoLastSentMs.value < 150) return;
+    thermoLastSentMs.value = now;
+  }
+  const m = thermoMode.value;
+  if (m !== "Auto" && m !== "Heat" && m !== "Cool") return;
+  hc3.setThermostatSetpoint(deviceId.value, next, m).catch(() => {});
 };
 
-const onSetpointSlider = (e: any) => {
-  const v = Number(e.detail.value ?? 22);
-  applyThermostat(v);
-};
+const onThermoSetpointChanging = (e: any) => setThermoSetpoint(Number(e.detail.value ?? 0), true);
+const onThermoSetpointChange = (e: any) => setThermoSetpoint(Number(e.detail.value ?? 0), false);
+
+const applyThermostat = (t: number) => setThermoSetpoint(Number(t), false);
 
 const brightness = computed(() => {
   const cc = device.value?.properties?.colorComponents || {};

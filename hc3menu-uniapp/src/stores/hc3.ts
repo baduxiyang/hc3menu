@@ -494,9 +494,40 @@ export const useHc3Store = defineStore("hc3", {
       return this.runDeviceAction(() => client.callAction(deviceId, "stop"));
     },
 
-    setThermostat(deviceId: number, temp: number, mode: "Heat" | "Cool") {
+    setThermostatMode(deviceId: number, mode: "Auto" | "Off" | "Heat" | "Cool") {
       const client = this.ensureClient();
-      return this.runDeviceAction(() => client.setThermostatSetpoint(deviceId, temp, mode));
+      const m = String(mode) as "Auto" | "Off" | "Heat" | "Cool";
+      const dev = this.devices?.[Number(deviceId)];
+      if (dev) {
+        const props = (dev.properties && typeof dev.properties === "object") ? dev.properties : {};
+        props.thermostatMode = m;
+        dev.properties = props;
+        this.devices = { ...this.devices, [Number(deviceId)]: dev };
+      }
+      return this.runDeviceAction(() => client.setThermostatMode(deviceId, m));
+    },
+
+    setThermostatSetpoint(deviceId: number, temp: number, mode: "Auto" | "Heat" | "Cool") {
+      const client = this.ensureClient();
+      const t = Number(temp);
+      const m = String(mode) as "Auto" | "Heat" | "Cool";
+
+      const dev = this.devices?.[Number(deviceId)];
+      if (dev) {
+        const props = (dev.properties && typeof dev.properties === "object") ? dev.properties : {};
+        if (m === "Auto") props.autoThermostatSetpoint = t;
+        if (m === "Heat") props.heatingThermostatSetpoint = t;
+        if (m === "Cool") props.coolingThermostatSetpoint = t;
+        dev.properties = props;
+        this.devices = { ...this.devices, [Number(deviceId)]: dev };
+      }
+
+      if (m === "Auto") return this.runDeviceAction(() => client.setAutoThermostatSetpoint(deviceId, t));
+      return this.runDeviceAction(() => client.setThermostatSetpoint(deviceId, t, m));
+    },
+
+    setThermostat(deviceId: number, temp: number, mode: "Heat" | "Cool") {
+      return this.setThermostatSetpoint(deviceId, temp, mode);
     },
 
     runScene(sceneId: number) {
