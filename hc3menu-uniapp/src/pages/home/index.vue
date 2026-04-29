@@ -39,7 +39,7 @@
           :scroll-top="scrollTopCmdByPage[p.key]"
           @scroll="(e: any) => onRoomScroll(p.key, e)"
         >
-          <view class="top-anchor" :id="`top-${p.key}`"></view>
+          <view class="top-anchor" :id="topAnchorId(p.key)"></view>
           <view class="list" v-if="p.devices.length">
             <DeviceRow
               v-for="d in p.devices"
@@ -87,6 +87,9 @@ const favoriteSet = computed(() => new Set<number>(settings.config.favorites || 
 const isFavorite = (id: number) => favoriteSet.value.has(Number(id));
 
 type RoomPage = { key: string; name: string; devices: any[] };
+
+const safeKey = (k: string) => String(k || "").replaceAll(/[^a-zA-Z0-9_-]/g, "_");
+const topAnchorId = (k: string) => `top-${safeKey(k)}`;
 
 const apiSections = computed(() => {
   const items = (hc3.allSections || []).slice();
@@ -228,7 +231,7 @@ const backToTop = () => {
   setHomeTab("Home");
   setTimeout(() => {
     scrollTopCmdByPage.value = { ...scrollTopCmdByPage.value, [key]: 0 };
-    scrollIntoViewId.value = `top-${key}`;
+    scrollIntoViewId.value = topAnchorId(key);
   }, 30);
 
   setTimeout(() => {
