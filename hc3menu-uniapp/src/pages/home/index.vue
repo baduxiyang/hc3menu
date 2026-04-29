@@ -23,7 +23,7 @@
     </view>
 
     <swiper class="swiper" :current="swiperCurrent" :disable-touch="swiperDisableTouch" @animationfinish="onSwiperFinish">
-      <swiper-item v-for="v in virtualPages" :key="`${v.slot}:${v.page?.key || 'none'}`">
+      <swiper-item v-for="v in virtualPages" :key="v.slot">
         <scroll-view
           v-if="v.page"
           :key="`${v.slot}:${v.page.key}:${scrollViewKeyByPage[v.page.key] || 0}`"
