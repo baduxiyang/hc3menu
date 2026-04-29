@@ -32,14 +32,12 @@
     <swiper class="swiper" :current="roomIndex" @change="onSwiperChange" v-if="roomPages.length">
       <swiper-item v-for="p in roomPages" :key="p.key">
         <scroll-view
+          :key="`${p.key}:${scrollViewKeyByPage[p.key] || 0}`"
           scroll-y
-          scroll-with-animation
           class="room-scroll"
-          :scroll-into-view="scrollIntoViewByPage[p.key]"
           :scroll-top="scrollTopCmdByPage[p.key]"
           @scroll="(e: any) => onRoomScroll(p.key, e)"
         >
-          <view class="top-anchor" :id="topAnchorId(p.key)"></view>
           <view class="list" v-if="p.devices.length">
             <DeviceRow
               v-for="d in p.devices"
@@ -76,9 +74,9 @@ const settings = useSettingsStore();
 
 const roomIndex = ref(0);
 const sectionIndex = ref(0);
-const scrollIntoViewByPage = ref<Record<string, string | undefined>>({});
 const scrollTopByPage = ref<Record<string, number>>({});
 const scrollTopCmdByPage = ref<Record<string, number | undefined>>({});
+const scrollViewKeyByPage = ref<Record<string, number | undefined>>({});
 const homeTabText = ref<"Home" | "Back to Top">("Home");
 
 const HOME_TAB_INDEX = 0;
@@ -87,9 +85,6 @@ const favoriteSet = computed(() => new Set<number>(settings.config.favorites || 
 const isFavorite = (id: number) => favoriteSet.value.has(Number(id));
 
 type RoomPage = { key: string; name: string; devices: any[] };
-
-const safeKey = (k: string) => String(k || "").replace(/[^a-zA-Z0-9_-]/g, "_");
-const topAnchorId = (k: string) => `top-${safeKey(k)}`;
 
 const apiSections = computed(() => {
   const items = (hc3.allSections || []).slice();
@@ -180,7 +175,7 @@ watch(roomPages, (p) => {
   };
   scrollTopByPage.value = keepNum(scrollTopByPage.value);
   scrollTopCmdByPage.value = keepAny(scrollTopCmdByPage.value);
-  scrollIntoViewByPage.value = keepAny(scrollIntoViewByPage.value);
+  scrollViewKeyByPage.value = keepAny(scrollViewKeyByPage.value);
 });
 
 watch(apiSections, (p) => {
@@ -243,9 +238,9 @@ const onSectionTap = (idx: number) => {
   clearBackToTopTimers();
   sectionIndex.value = Number(idx) || 0;
   roomIndex.value = 0;
-  scrollIntoViewByPage.value = {};
   scrollTopCmdByPage.value = {};
   scrollTopByPage.value = {};
+  scrollViewKeyByPage.value = {};
   setHomeTab("Home");
 };
 
@@ -259,23 +254,20 @@ const backToTop = () => {
   const key = currentPageKey.value;
   if (!key) return;
   clearBackToTopTimers();
-  scrollIntoViewByPage.value = { ...scrollIntoViewByPage.value, [key]: undefined };
   scrollTopCmdByPage.value = { ...scrollTopCmdByPage.value, [key]: 1 };
   scrollTopByPage.value = { ...scrollTopByPage.value, [key]: 0 };
   setHomeTab("Home");
   backToTopTimer1 = setTimeout(() => {
     if (!roomPages.value.some((p) => p.key === key)) return;
     scrollTopCmdByPage.value = { ...scrollTopCmdByPage.value, [key]: 0 };
-    scrollIntoViewByPage.value = { ...scrollIntoViewByPage.value, [key]: topAnchorId(key) };
+    const cur = Number(scrollViewKeyByPage.value[key] ?? 0);
+    scrollViewKeyByPage.value = { ...scrollViewKeyByPage.value, [key]: cur + 1 };
   }, 30) as unknown as number;
 
   backToTopTimer2 = setTimeout(() => {
     const nextTop = { ...scrollTopCmdByPage.value };
     delete nextTop[key];
     scrollTopCmdByPage.value = nextTop;
-    const nextInto = { ...scrollIntoViewByPage.value };
-    delete nextInto[key];
-    scrollIntoViewByPage.value = nextInto;
   }, 160) as unknown as number;
 };
 
@@ -402,9 +394,6 @@ onHide(() => {
 }
 .room-scroll {
   height: 100%;
-}
-.top-anchor {
-  height: 1px;
 }
 .list {
   background: #fff;
