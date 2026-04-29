@@ -62,6 +62,13 @@
 
     <view class="card" v-if="kind === 'color'">
       <view class="row">
+        <text class="label">Color</text>
+        <view class="color-wrap">
+          <view class="swatch" :style="colorPreviewStyle"></view>
+          <text class="value">{{ colorHex }}</text>
+        </view>
+      </view>
+      <view class="row">
         <text class="label">Brightness</text>
         <text class="value">{{ brightness }}%</text>
       </view>
@@ -267,6 +274,42 @@ const refreshOne = async () => {
   if (d && d.id != null) hc3.devices = { ...hc3.devices, [Number(d.id)]: d };
 };
 
+const clamp255 = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
+
+const toHex2 = (n: number) => clamp255(n).toString(16).padStart(2, "0").toUpperCase();
+
+const colorRgb = computed(() => {
+  const cc = device.value?.properties?.colorComponents || {};
+  const r0 = Number(cc?.red ?? 0);
+  const g0 = Number(cc?.green ?? 0);
+  const b0 = Number(cc?.blue ?? 0);
+  const ww = Number(cc?.warmWhite ?? 0);
+  const cw = Number(cc?.coldWhite ?? cc?.white ?? 0);
+  const w = Number(cc?.white ?? 0);
+  const w2 = Number(cc?.w ?? 0);
+  const white = Math.max(ww, cw, w, w2);
+  const mix = Math.max(0, Math.min(1, white / 255));
+  const r1 = r0 * (1 - mix) + 255 * mix;
+  const g1 = g0 * (1 - mix) + 255 * mix;
+  const b1 = b0 * (1 - mix) + 255 * mix;
+  const br = Math.max(0, Math.min(1, (Number(brightness.value) || 0) / 100));
+  return {
+    r: clamp255(r1 * br),
+    g: clamp255(g1 * br),
+    b: clamp255(b1 * br),
+  };
+});
+
+const colorHex = computed(() => {
+  const { r, g, b } = colorRgb.value;
+  return `#${toHex2(r)}${toHex2(g)}${toHex2(b)}`;
+});
+
+const colorPreviewStyle = computed(() => {
+  const { r, g, b } = colorRgb.value;
+  return `background: rgb(${r},${g},${b});`;
+});
+
 onLoad((q) => {
   deviceId.value = Number((q as any)?.id || 0);
 });
@@ -323,6 +366,17 @@ onLoad((q) => {
 .value {
   font-size: 26rpx;
   color: #666;
+}
+.color-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.swatch {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 10rpx;
+  border: 1rpx solid #e6e6e6;
 }
 .picker {
   font-size: 26rpx;
