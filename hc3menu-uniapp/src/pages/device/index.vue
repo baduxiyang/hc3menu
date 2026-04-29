@@ -141,15 +141,25 @@ const COLOR_CONTROLLER_TYPES = new Set(["com.fibaro.colorController"]);
 const classify = (d: any): string => {
   const t = String(d?.type || "");
   const base = String(d?.baseType || "");
-  if (COLOR_CONTROLLER_TYPES.has(t) || COLOR_CONTROLLER_TYPES.has(base)) return "color";
-  if (SWITCH_TYPES.has(t) || SWITCH_TYPES.has(base)) return "switch";
-  if (DIMMER_TYPES.has(t) || DIMMER_TYPES.has(base)) return "dimmer";
-  if (SHUTTER_TYPES.has(t) || SHUTTER_TYPES.has(base)) return "shutter";
-  if (TEMP_SENSOR_TYPES.has(t) || TEMP_SENSOR_TYPES.has(base)) return "temp_sensor";
-  if (LUX_SENSOR_TYPES.has(t) || LUX_SENSOR_TYPES.has(base)) return "lux_sensor";
-  if (HUMIDITY_TYPES.has(t) || HUMIDITY_TYPES.has(base)) return "humidity_sensor";
-  if (MOTION_TYPES.has(t) || MOTION_TYPES.has(base)) return "motion_sensor";
-  if (THERMOSTAT_TYPES.has(t) || THERMOSTAT_TYPES.has(base)) return "thermostat";
+  if (COLOR_CONTROLLER_TYPES.has(t)) return "color";
+  if (DIMMER_TYPES.has(t)) return "dimmer";
+  if (SWITCH_TYPES.has(t)) return "switch";
+  if (SHUTTER_TYPES.has(t)) return "shutter";
+  if (THERMOSTAT_TYPES.has(t)) return "thermostat";
+  if (TEMP_SENSOR_TYPES.has(t)) return "temp_sensor";
+  if (LUX_SENSOR_TYPES.has(t)) return "lux_sensor";
+  if (HUMIDITY_TYPES.has(t)) return "humidity_sensor";
+  if (MOTION_TYPES.has(t)) return "motion_sensor";
+
+  if (COLOR_CONTROLLER_TYPES.has(base)) return "color";
+  if (DIMMER_TYPES.has(base)) return "dimmer";
+  if (SWITCH_TYPES.has(base)) return "switch";
+  if (SHUTTER_TYPES.has(base)) return "shutter";
+  if (THERMOSTAT_TYPES.has(base)) return "thermostat";
+  if (TEMP_SENSOR_TYPES.has(base)) return "temp_sensor";
+  if (LUX_SENSOR_TYPES.has(base)) return "lux_sensor";
+  if (HUMIDITY_TYPES.has(base)) return "humidity_sensor";
+  if (MOTION_TYPES.has(base)) return "motion_sensor";
   return "sensor";
 };
 
@@ -178,7 +188,9 @@ const toggleFav = () => settings.toggleFavorite(deviceId.value);
 const valueNum = computed(() => {
   const v = device.value?.properties?.value;
   const n = Number(v);
-  return Number.isFinite(n) ? Math.round(n) : 0;
+  if (Number.isFinite(n)) return Math.round(n);
+  const on = truthy(device.value?.properties?.state);
+  return on ? 100 : 0;
 });
 
 const isOn = computed(() => truthy(device.value?.properties?.value ?? device.value?.properties?.state));
