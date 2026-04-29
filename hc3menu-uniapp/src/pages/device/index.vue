@@ -114,6 +114,14 @@
       </view>
     </view>
 
+    <view class="card">
+      <view class="json-actions">
+        <text class="json-title">Raw JSON</text>
+        <button size="mini" @click="copyJson">复制</button>
+      </view>
+      <textarea class="json-box" :value="rawText" :maxlength="-1" auto-height disabled />
+    </view>
+
     <view class="footer-space"></view>
   </scroll-view>
 
@@ -124,7 +132,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { onLoad } from "@dcloudio/uni-app";
+import { onLoad, onShow } from "@dcloudio/uni-app";
 import { useHc3Store } from "@/stores/hc3";
 import { useSettingsStore } from "@/stores/settings";
 
@@ -177,10 +185,19 @@ const deviceId = ref(0);
 const mode = ref<"Heat" | "Cool">("Heat");
 const setpoint = ref<number>(22);
 const hex = ref("");
+const rawDevice = ref<any | null>(null);
 
 const device = computed(() => hc3.devices?.[deviceId.value]);
 const kind = computed(() => classify(device.value));
 const roomName = computed(() => hc3.roomName(Number(device.value?.roomID ?? 0)));
+const rawText = computed(() => {
+  const src = rawDevice.value ?? device.value ?? {};
+  try {
+    return JSON.stringify(src, null, 2);
+  } catch {
+    return String(src);
+  }
+});
 
 const isFav = computed(() => (settings.config.favorites || []).includes(deviceId.value));
 const toggleFav = () => settings.toggleFavorite(deviceId.value);
@@ -294,7 +311,16 @@ const applyFavorite = (c: any) => {
 
 const refreshOne = async () => {
   const d = await hc3.ensureClient().getDevice(deviceId.value).catch(() => null);
-  if (d && d.id != null) hc3.devices = { ...hc3.devices, [Number(d.id)]: d };
+  if (d && d.id != null) {
+    hc3.devices = { ...hc3.devices, [Number(d.id)]: d };
+    rawDevice.value = d;
+  }
+};
+
+const copyJson = () => {
+  const t = rawText.value || "";
+  if (!t) return;
+  uni.setClipboardData({ data: t, success: () => uni.showToast({ title: "已复制", icon: "success" }) });
 };
 
 const clamp255 = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
@@ -345,6 +371,11 @@ const colorPreviewStyle = computed(() => {
 
 onLoad((q) => {
   deviceId.value = Number((q as any)?.id || 0);
+  refreshOne().catch(() => {});
+});
+
+onShow(() => {
+  if (deviceId.value) refreshOne().catch(() => {});
 });
 </script>
 
@@ -448,5 +479,27 @@ onLoad((q) => {
   align-items: center;
   justify-content: center;
   color: #666;
+}
+
+.json-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+.json-title {
+  font-size: 28rpx;
+  color: #111;
+}
+.json-box {
+  width: 100%;
+  min-height: 260rpx;
+  padding: 14rpx;
+  border-radius: 12rpx;
+  background: #0b1020;
+  color: #e6edf3;
+  font-size: 22rpx;
+  line-height: 32rpx;
+  box-sizing: border-box;
 }
 </style>
