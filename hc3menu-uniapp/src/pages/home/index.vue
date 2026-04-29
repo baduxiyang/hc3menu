@@ -13,10 +13,9 @@
       </view>
     </view>
 
-    <scroll-view scroll-x class="sections" v-if="sections.length">
-      <view class="sec-item" v-for="s in sections" :key="s.key" @click="onSection(s.key)">
-        <text class="sec-text">{{ s.label }}</text>
-        <text v-if="s.badge" class="sec-badge">{{ s.badge }}</text>
+    <scroll-view scroll-x class="sections" v-if="apiSections.length">
+      <view class="sec-item" :class="{ active: idx === sectionIndex }" v-for="(s, idx) in apiSections" :key="s.id" @click="onSectionTap(idx)">
+        <text class="sec-text">{{ s.name || ("Section " + s.id) }}</text>
       </view>
     </scroll-view>
 
@@ -68,21 +67,28 @@ const hc3 = useHc3Store();
 const settings = useSettingsStore();
 
 const roomIndex = ref(0);
+const sectionIndex = ref(0);
 
 const favoriteSet = computed(() => new Set<number>(settings.config.favorites || []));
 const isFavorite = (id: number) => favoriteSet.value.has(Number(id));
 
-const favoriteDevices = computed(() => {
-  const ids = settings.config.favorites || [];
-  const out: any[] = [];
-  for (const id of ids) {
-    const d = hc3.devices?.[Number(id)];
-    if (d) out.push(d);
-  }
-  return out;
+type RoomPage = { key: string; name: string; devices: any[] };
+
+const apiSections = computed(() => {
+  const items = (hc3.allSections || []).slice();
+  items.sort((a: any, b: any) => {
+    const sa = Number(a?.sortOrder ?? 0);
+    const sb = Number(b?.sortOrder ?? 0);
+    if (sa !== sb) return sa - sb;
+    return String(a?.name || "").localeCompare(String(b?.name || ""));
+  });
+  return items;
 });
 
-type RoomPage = { key: string; name: string; devices: any[] };
+const selectedSectionId = computed(() => {
+  const s = apiSections.value[sectionIndex.value];
+  return s?.id != null ? Number(s.id) : null;
+});
 
 const roomPages = computed<RoomPage[]>(() => {
   const roomMap = hc3.rooms || {};
@@ -93,9 +99,14 @@ const roomPages = computed<RoomPage[]>(() => {
     if (!byRoom[rid]) byRoom[rid] = [];
     byRoom[rid].push(d);
   }
-  const ids = new Set<number>(Object.keys(roomMap).map((x) => Number(x)));
+  const ids = new Set<number>();
+  for (const k of Object.keys(roomMap)) {
+    const rid = Number(k);
+    const r = roomMap[rid];
+    const sid = r?.sectionID ?? r?.sectionId ?? r?.section ?? null;
+    if (selectedSectionId.value == null || Number(sid) === Number(selectedSectionId.value)) ids.add(rid);
+  }
   for (const k of Object.keys(byRoom)) ids.add(Number(k));
-  if (byRoom[0]?.length) ids.add(0);
 
   const sorted = Array.from(ids).sort((a, b) => {
     const an = a === 0 ? "Unassigned" : (roomMap[a]?.name || "");
@@ -104,10 +115,10 @@ const roomPages = computed<RoomPage[]>(() => {
   });
 
   const pages: RoomPage[] = [];
-  if (favoriteDevices.value.length) {
-    pages.push({ key: "fav", name: "Favorites", devices: favoriteDevices.value });
-  }
   for (const rid of sorted) {
+    const r = roomMap[rid];
+    const sid = r?.sectionID ?? r?.sectionId ?? r?.section ?? null;
+    if (selectedSectionId.value != null && Number(sid) !== Number(selectedSectionId.value)) continue;
     const name = roomMap[rid]?.name || (rid === 0 ? "Unassigned" : `Room ${rid}`);
     const ds = (byRoom[rid] || []).slice().sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || "")));
     pages.push({ key: `room:${rid}`, name, devices: ds });
@@ -117,52 +128,20 @@ const roomPages = computed<RoomPage[]>(() => {
 
 const currentPage = computed(() => roomPages.value[roomIndex.value]);
 
-const attentionCount = computed(() => {
-  const thr = Number(settings.config.lowBatteryThreshold ?? 20);
-  const devs = Object.values(hc3.devices || {}) as any[];
-  let n = 0;
-  for (const d of devs) {
-    const p = d?.properties || {};
-    if (p.dead) {
-      n += 1;
-      continue;
-    }
-    const b = p.batteryLevel;
-    const bn = b != null ? Number(b) : null;
-    if (bn != null && Number.isFinite(bn) && bn <= thr) n += 1;
-  }
-  return n;
-});
-
-const alarmCount = computed(() => {
-  const parts = hc3.allPartitions || [];
-  let n = 0;
-  for (const p of parts as any[]) {
-    if (p?.breached || p?.pending) n += 1;
-  }
-  return n;
-});
-
-const sections = computed(() => {
-  const out: { key: string; label: string; badge?: string }[] = [];
-  out.push({ key: "rooms", label: "Rooms" });
-  out.push({ key: "favorites", label: "Favorites", badge: favoriteDevices.value.length ? String(favoriteDevices.value.length) : "" });
-  out.push({ key: "scenes", label: "Scenes", badge: hc3.scenes?.length ? String(hc3.scenes.length) : "" });
-  out.push({ key: "alarm", label: "Alarm", badge: alarmCount.value ? String(alarmCount.value) : "" });
-  out.push({ key: "profiles", label: "Profiles" });
-  out.push({ key: "attention", label: "Attention", badge: attentionCount.value ? String(attentionCount.value) : "" });
-  out.push({ key: "activity", label: "Activity" });
-  out.push({ key: "debug", label: "Debug" });
-  out.push({ key: "diagnostics", label: "Diagnostics" });
-  return out;
-});
-
 watch(roomPages, (p) => {
   if (!p.length) {
     roomIndex.value = 0;
     return;
   }
   if (roomIndex.value >= p.length) roomIndex.value = 0;
+});
+
+watch(apiSections, (p) => {
+  if (!p.length) {
+    sectionIndex.value = 0;
+    return;
+  }
+  if (sectionIndex.value >= p.length) sectionIndex.value = 0;
 });
 
 const openDevice = (id: number) => {
@@ -204,43 +183,9 @@ const openRoomPicker = () => {
   });
 };
 
-const onSection = (key: string) => {
-  if (key === "rooms") {
-    openRoomPicker();
-    return;
-  }
-  if (key === "favorites") {
-    const idx = roomPages.value.findIndex((p) => p.key === "fav");
-    if (idx >= 0) roomIndex.value = idx;
-    return;
-  }
-  if (key === "scenes") {
-    uni.navigateTo({ url: "/pages/scenes/index" });
-    return;
-  }
-  if (key === "alarm") {
-    uni.navigateTo({ url: "/pages/alarm/index" });
-    return;
-  }
-  if (key === "profiles") {
-    uni.navigateTo({ url: "/pages/profiles/index" });
-    return;
-  }
-  if (key === "attention") {
-    uni.navigateTo({ url: "/pages/attention/index" });
-    return;
-  }
-  if (key === "activity") {
-    uni.navigateTo({ url: "/pages/activity/index" });
-    return;
-  }
-  if (key === "debug") {
-    uni.navigateTo({ url: "/pages/debug/index" });
-    return;
-  }
-  if (key === "diagnostics") {
-    uni.navigateTo({ url: "/pages/diagnostics/index" });
-  }
+const onSectionTap = (idx: number) => {
+  sectionIndex.value = Number(idx) || 0;
+  roomIndex.value = 0;
 };
 
 onShow(() => {
@@ -300,6 +245,9 @@ onShow(() => {
   margin-right: 12rpx;
   border-radius: 999rpx;
   background: #fff;
+}
+.sec-item.active {
+  background: #e8f1ff;
 }
 .sec-text {
   font-size: 24rpx;

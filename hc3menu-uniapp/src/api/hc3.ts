@@ -75,6 +75,10 @@ export class HC3Client {
     return this.request<any[]>("GET", "/rooms").then((x) => (Array.isArray(x) ? x : []));
   }
 
+  getSections(): Promise<any[]> {
+    return this.request<any[]>("GET", "/sections").then((x) => (Array.isArray(x) ? x : []));
+  }
+
   getDevice(deviceId: number): Promise<any> {
     return this.request<any>("GET", `/devices/${Number(deviceId)}`);
   }

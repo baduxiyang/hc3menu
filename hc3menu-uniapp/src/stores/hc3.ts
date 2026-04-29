@@ -51,6 +51,7 @@ export const useHc3Store = defineStore("hc3", {
 
     devices: {} as Record<number, any>,
     rooms: {} as Record<number, any>,
+    sections: {} as Record<number, any>,
     partitions: {} as Record<number, any>,
     profiles: [] as any[],
     activeProfileId: null as number | null,
@@ -83,6 +84,7 @@ export const useHc3Store = defineStore("hc3", {
   getters: {
     allDevices: (s): any[] => Object.values(s.devices || {}),
     allRooms: (s): any[] => Object.values(s.rooms || {}),
+    allSections: (s): any[] => Object.values(s.sections || {}),
     allPartitions: (s): any[] => Object.values(s.partitions || {}),
     recentActivity: (s) => (limit: number = 30) => (s.activity || []).slice(0, limit),
     recentDebugMessages: (s) => (limit: number = 100) => (s.debugMsgs || []).slice(0, limit),
@@ -266,9 +268,10 @@ export const useHc3Store = defineStore("hc3", {
       if (!settings.isCredsComplete) throw new Error("请先在设置里填写 Host/User/Password");
 
       const client = this.ensureClient();
-      const [devices, rooms, parts, prof, scenes, favColors] = await Promise.all([
+      const [devices, rooms, sections, parts, prof, scenes, favColors] = await Promise.all([
         client.getDevices(),
         client.getRooms(),
+        client.getSections().catch(() => []),
         client.getPartitions().catch(() => []),
         client.getProfiles().catch(() => ({ activeProfile: null, profiles: [] })),
         client.getScenes().catch(() => []),
@@ -277,6 +280,7 @@ export const useHc3Store = defineStore("hc3", {
 
       this.devices = Object.fromEntries((devices || []).filter((d: any) => d && d.id != null).map((d: any) => [Number(d.id), d]));
       this.rooms = Object.fromEntries((rooms || []).filter((r: any) => r && r.id != null).map((r: any) => [Number(r.id), r]));
+      this.sections = Object.fromEntries((sections || []).filter((s: any) => s && s.id != null).map((s: any) => [Number(s.id), s]));
       this.partitions = Object.fromEntries((parts || []).filter((p: any) => p && p.id != null).map((p: any) => [Number(p.id), p]));
       this.profiles = Array.isArray(prof?.profiles) ? prof.profiles : [];
       this.activeProfileId = prof?.activeProfile != null ? Number(prof.activeProfile) : null;
@@ -435,9 +439,14 @@ export const useHc3Store = defineStore("hc3", {
         const now = nowSec();
         if (!this.lastStructureRefreshSec) this.lastStructureRefreshSec = now;
         if (now - this.lastStructureRefreshSec >= 300) {
-          const [devices, rooms] = await Promise.all([client.getDevices().catch(() => null), client.getRooms().catch(() => null)]);
+          const [devices, rooms, sections] = await Promise.all([
+            client.getDevices().catch(() => null),
+            client.getRooms().catch(() => null),
+            client.getSections().catch(() => null),
+          ]);
           if (devices) this.devices = Object.fromEntries((devices || []).filter((d: any) => d && d.id != null).map((d: any) => [Number(d.id), d]));
           if (rooms) this.rooms = Object.fromEntries((rooms || []).filter((r: any) => r && r.id != null).map((r: any) => [Number(r.id), r]));
+          if (sections) this.sections = Object.fromEntries((sections || []).filter((s: any) => s && s.id != null).map((s: any) => [Number(s.id), s]));
           this.lastStructureRefreshSec = now;
         }
 
