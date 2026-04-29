@@ -411,10 +411,11 @@ export const useHc3Store = defineStore("hc3", {
         const client = this.ensureClient();
         const [diag, debug] = await Promise.all([
           client.getDiagnostics().catch(() => null),
-          client.getDebugMessages({ offset: 100 }).catch(() => null),
+          client.getDebugMessages({ types: ["warning", "error", "fatal"], offset: 50, last: this.debugNextLast || undefined }).catch(() => null),
         ]);
         if (diag) this.updateDiagnostics(diag);
         if (debug && typeof debug === "object") {
+          this.debugNextLast = Number((debug as any).nextLast ?? this.debugNextLast);
           const added = this.mergeDebugMessages((debug as any).messages || []);
           if (settings.config.qaErrorNotifications && added.length) {
             for (const m of added) {
