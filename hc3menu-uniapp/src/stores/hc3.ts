@@ -14,21 +14,32 @@ const nowSec = () => Math.floor(Date.now() / 1000);
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
+const unpackEvent = (evt: any): { type: string; data: any } => {
+  if (!evt || typeof evt !== "object") return { type: "", data: null };
+  const type = String((evt as any).type || "");
+  const data = (evt as any).data && typeof (evt as any).data === "object" ? (evt as any).data : evt;
+  return { type, data };
+};
+
 const normalizeChange = (evt: any): { id: number; property: string; newValue: any; oldValue: any } | null => {
   if (!evt || typeof evt !== "object") return null;
 
-  if (evt.type === "DevicePropertyUpdatedEvent") {
-    const id = Number(evt.id);
-    const property = String(evt.property || "");
+  const { type, data } = unpackEvent(evt);
+
+  if (type === "DevicePropertyUpdatedEvent") {
+    const id = Number(data?.id);
+    const property = String(data?.property || "");
     if (!Number.isFinite(id) || !property) return null;
-    return { id, property, newValue: evt.newValue, oldValue: evt.oldValue };
+    return { id, property, newValue: data?.newValue, oldValue: data?.oldValue };
   }
 
-  if ("id" in evt && ("property" in evt || "name" in evt)) {
-    const id = Number((evt as any).id);
-    const property = String((evt as any).property || (evt as any).name || "");
+  if (data && typeof data === "object" && ("id" in data) && ("property" in data || "name" in data)) {
+    const id = Number((data as any).id);
+    const property = String((data as any).property || (data as any).name || "");
     if (!Number.isFinite(id) || !property) return null;
-    return { id, property, newValue: (evt as any).newValue, oldValue: (evt as any).oldValue };
+    const newValue = (data as any).newValue ?? (data as any).value;
+    const oldValue = (data as any).oldValue;
+    return { id, property, newValue, oldValue };
   }
 
   return null;
@@ -344,11 +355,11 @@ export const useHc3Store = defineStore("hc3", {
     async handleEvent(evt: any) {
       if (!evt || typeof evt !== "object") return;
 
-      const t = String((evt as any).type || "");
+      const { type: t, data } = unpackEvent(evt);
       if (!t) return;
 
       if (t === "AlarmPartitionArmedEvent" || t === "AlarmPartitionDisarmedEvent" || t === "AlarmPartitionBreachedEvent" || t === "AlarmPartitionPendingEvent") {
-        const pid = Number((evt as any).partitionId ?? (evt as any).id);
+        const pid = Number((data as any)?.partitionId ?? (data as any)?.id);
         if (Number.isFinite(pid)) {
           const p = this.partitions?.[pid] || { id: pid };
           const armed = t === "AlarmPartitionArmedEvent" ? true : t === "AlarmPartitionDisarmedEvent" ? false : p.armed;
@@ -361,7 +372,7 @@ export const useHc3Store = defineStore("hc3", {
       }
 
       if (t === "ActiveProfileChangedEvent") {
-        const id = Number((evt as any).profileId);
+        const id = Number((data as any)?.profileId);
         if (Number.isFinite(id)) {
           this.activeProfileId = id;
           this.addActivity({ kind: "profile", text: `Active profile -> ${id}` });
@@ -370,7 +381,7 @@ export const useHc3Store = defineStore("hc3", {
       }
 
       if (t === "PluginProcessCrashedEvent") {
-        const pid = Number((evt as any).id ?? 0);
+        const pid = Number((data as any)?.id ?? 0);
         this.addActivity({ kind: "qa_crash", text: `PluginProcessCrashedEvent ${pid || ""}`.trim() });
         const settings = useSettingsStore();
         if (settings.config.qaCrashNotifications && pid && !this.qaCrashNotified[pid]) {
@@ -381,12 +392,12 @@ export const useHc3Store = defineStore("hc3", {
       }
 
       if (t === "DevicePropertyUpdatedEvent") {
-        const devId = Number((evt as any).id);
-        const prop = String((evt as any).property || "");
+        const devId = Number((data as any)?.id);
+        const prop = String((data as any)?.property || "");
         if (!Number.isFinite(devId) || !prop) return;
         const dev = this.devices?.[devId];
         const name = dev?.name || `Device ${devId}`;
-        this.addActivity({ kind: "device", devId, devName: name, text: `${prop} -> ${String((evt as any).newValue)}` });
+        this.addActivity({ kind: "device", devId, devName: name, text: `${prop} -> ${String((data as any)?.newValue)}` });
         return;
       }
     },
