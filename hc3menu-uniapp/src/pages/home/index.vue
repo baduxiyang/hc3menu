@@ -31,7 +31,14 @@
 
     <swiper class="swiper" :current="roomIndex" @change="onSwiperChange" v-if="roomPages.length">
       <swiper-item v-for="p in roomPages" :key="p.key">
-        <scroll-view scroll-y class="room-scroll">
+        <scroll-view
+          scroll-y
+          scroll-with-animation
+          class="room-scroll"
+          :scroll-into-view="scrollIntoViewId"
+          @scroll="(e: any) => onRoomScroll(p.key, e)"
+        >
+          <view :id="`top-${p.key}`"></view>
           <view class="list" v-if="p.devices.length">
             <DeviceRow
               v-for="d in p.devices"
@@ -58,7 +65,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { onShow } from "@dcloudio/uni-app";
+import { onHide, onShow, onTabItemTap } from "@dcloudio/uni-app";
 import DeviceRow from "@/components/DeviceRow.vue";
 import { useHc3Store } from "@/stores/hc3";
 import { useSettingsStore } from "@/stores/settings";
@@ -68,6 +75,11 @@ const settings = useSettingsStore();
 
 const roomIndex = ref(0);
 const sectionIndex = ref(0);
+const scrollIntoViewId = ref("");
+const scrollTopByPage = ref<Record<string, number>>({});
+const homeTabText = ref<"Home" | "Back to Top">("Home");
+
+const HOME_TAB_INDEX = 0;
 
 const favoriteSet = computed(() => new Set<number>(settings.config.favorites || []));
 const isFavorite = (id: number) => favoriteSet.value.has(Number(id));
@@ -127,6 +139,7 @@ const roomPages = computed<RoomPage[]>(() => {
 });
 
 const currentPage = computed(() => roomPages.value[roomIndex.value]);
+const currentPageKey = computed(() => currentPage.value?.key || "");
 
 watch(roomPages, (p) => {
   if (!p.length) {
@@ -143,6 +156,12 @@ watch(apiSections, (p) => {
   }
   if (sectionIndex.value >= p.length) sectionIndex.value = 0;
 });
+
+const setHomeTab = (text: "Home" | "Back to Top") => {
+  if (homeTabText.value === text) return;
+  homeTabText.value = text;
+  uni.setTabBarItem({ index: HOME_TAB_INDEX, text }).catch(() => {});
+};
 
 const openDevice = (id: number) => {
   uni.navigateTo({ url: `/pages/device/index?id=${Number(id)}` });
@@ -169,6 +188,9 @@ const goSearch = () => uni.navigateTo({ url: "/pages/search/index" });
 const onSwiperChange = (e: any) => {
   const cur = Number(e?.detail?.current ?? 0);
   if (Number.isFinite(cur)) roomIndex.value = cur;
+  const key = roomPages.value[cur]?.key || "";
+  const top = scrollTopByPage.value[key] || 0;
+  setHomeTab(top > 8 ? "Back to Top" : "Home");
 };
 
 const openRoomPicker = () => {
@@ -186,11 +208,41 @@ const openRoomPicker = () => {
 const onSectionTap = (idx: number) => {
   sectionIndex.value = Number(idx) || 0;
   roomIndex.value = 0;
+  setHomeTab("Home");
 };
+
+const onRoomScroll = (key: string, e: any) => {
+  const top = Number(e?.detail?.scrollTop ?? 0);
+  scrollTopByPage.value = { ...scrollTopByPage.value, [key]: Number.isFinite(top) ? top : 0 };
+  if (key === currentPageKey.value) setHomeTab(top > 8 ? "Back to Top" : "Home");
+};
+
+const backToTop = () => {
+  const key = currentPageKey.value;
+  if (!key) return;
+  scrollIntoViewId.value = `top-${key}`;
+  scrollTopByPage.value = { ...scrollTopByPage.value, [key]: 0 };
+  setHomeTab("Home");
+  setTimeout(() => {
+    scrollIntoViewId.value = "";
+  }, 80);
+};
+
+onTabItemTap((e) => {
+  if (Number(e.index) !== HOME_TAB_INDEX) return;
+  if (homeTabText.value === "Back to Top") backToTop();
+});
 
 onShow(() => {
   if (!settings.loaded) settings.load();
   hc3.startSync().catch(() => {});
+  const key = currentPageKey.value;
+  const top = scrollTopByPage.value[key] || 0;
+  setHomeTab(top > 8 ? "Back to Top" : "Home");
+});
+
+onHide(() => {
+  setHomeTab("Home");
 });
 </script>
 
