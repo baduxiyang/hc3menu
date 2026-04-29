@@ -14,25 +14,14 @@ const nowSec = () => Math.floor(Date.now() / 1000);
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
-const normalizeEvent = (evt: any): any => {
-  if (!evt || typeof evt !== "object") return evt;
-  const t = (evt as any).type;
-  const d = (evt as any).data;
-  if (typeof t === "string" && t && d && typeof d === "object" && !Array.isArray(d)) {
-    return { type: t, ...d };
-  }
-  return evt;
-};
-
 const normalizeChange = (evt: any): { id: number; property: string; newValue: any; oldValue: any } | null => {
   if (!evt || typeof evt !== "object") return null;
 
   if (evt.type === "DevicePropertyUpdatedEvent") {
-    const edata = (evt as any).data && typeof (evt as any).data === "object" ? (evt as any).data : evt;
-    const id = Number(edata.id);
-    const property = String(edata.property || "");
+    const id = Number(evt.id);
+    const property = String(evt.property || "");
     if (!Number.isFinite(id) || !property) return null;
-    return { id, property, newValue: edata.newValue, oldValue: edata.oldValue };
+    return { id, property, newValue: evt.newValue, oldValue: evt.oldValue };
   }
 
   if ("id" in evt && ("property" in evt || "name" in evt)) {
@@ -334,10 +323,9 @@ export const useHc3Store = defineStore("hc3", {
             if (c) this.applyChange(c);
           }
           for (const evt of events) {
-            const e = normalizeEvent(evt);
-            const c = normalizeChange(e);
+            const c = normalizeChange(evt);
             if (c) this.applyChange(c);
-            await this.handleEvent(e).catch(() => {});
+            await this.handleEvent(evt).catch(() => {});
           }
 
           consecutiveErrors = 0;
