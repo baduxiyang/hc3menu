@@ -92,6 +92,7 @@ export const useHc3Store = defineStore("hc3", {
   },
   actions: {
     notify(text: string) {
+      if (this.pollStop) return;
       const g: any = globalThis as any;
       const t = String(text || "");
       if (g.plus?.push?.createMessage) {
@@ -101,7 +102,10 @@ export const useHc3Store = defineStore("hc3", {
         } catch {
         }
       }
-      uni.showToast({ title: t.slice(0, 20), icon: "none", duration: 3000 });
+      try {
+        uni.showToast({ title: t.slice(0, 20), icon: "none", duration: 3000 });
+      } catch {
+      }
     },
 
     ensureClient() {
@@ -454,7 +458,10 @@ export const useHc3Store = defineStore("hc3", {
       try {
         await fn();
       } catch (e: any) {
-        uni.showToast({ title: e?.message || "操作失败", icon: "none" });
+        try {
+          uni.showToast({ title: e?.message || "操作失败", icon: "none" });
+        } catch {
+        }
         throw e;
       }
     },
