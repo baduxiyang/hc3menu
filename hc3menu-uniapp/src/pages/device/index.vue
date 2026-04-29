@@ -318,23 +318,28 @@ const thermoPresets = computed(() => {
 
 const fanOptions = computed(() => {
   const p = device.value?.properties || {};
-  const ms = p.supportedFanModes;
-  if (Array.isArray(ms) && ms.length) return ms.map((x: any) => String(x));
+  const ms = p.supportedThermostatFanModes ?? p.supportedFanModes;
+  let out: string[] = [];
+  if (Array.isArray(ms) && ms.length) out = ms.map((x: any) => String(x));
   const ss = p.supportedFanSpeeds;
-  if (Array.isArray(ss) && ss.length) return ss.map((x: any) => String(x));
-  return [];
+  if (!out.length && Array.isArray(ss) && ss.length) out = ss.map((x: any) => String(x));
+  const allowOff = Boolean(p.supportsThermostatFanOff);
+  if (allowOff && !out.includes("Off")) out = ["Off", ...out];
+  return out;
 });
 
 const fanSupported = computed(() => {
   const d = rawDevice.value ?? device.value;
   const a = d?.actions || {};
-  const hasAction = Boolean(a.setFanMode || a.setFanSpeed);
+  const hasAction = Boolean(a.setThermostatFanMode || a.setFanMode || a.setFanSpeed);
   return fanOptions.value.length > 0 && hasAction;
 });
 
 const fanValueLabel = computed(() => {
   const p = device.value?.properties || {};
-  const v = p.fanMode ?? p.fanSpeed;
+  const off = Boolean(p.thermostatFanOff);
+  if (off) return "Off";
+  const v = p.thermostatFanMode ?? p.fanMode ?? p.fanSpeed;
   return v != null && String(v) ? String(v) : "请选择";
 });
 
@@ -350,7 +355,8 @@ const onFanPick = (e: any) => {
   if (!next) return;
   const d = rawDevice.value ?? device.value;
   const a = d?.actions || {};
-  if (a.setFanMode) hc3.setFanMode(deviceId.value, next).catch(() => {});
+  if (a.setThermostatFanMode) hc3.setThermostatFanMode(deviceId.value, next).catch(() => {});
+  else if (a.setFanMode) hc3.setFanMode(deviceId.value, next).catch(() => {});
   else if (a.setFanSpeed) hc3.setFanSpeed(deviceId.value, next).catch(() => {});
 };
 
