@@ -235,11 +235,11 @@ export const useHc3Store = defineStore("hc3", {
         const cond = String((r as any).condition || "any");
         if (!this.matchCondition(cond, newValue)) continue;
         const msgTmpl = String((r as any).message || "{name} {property} -> {newValue}");
-        const msg = msgTmpl
-          .replaceAll("{name}", devName || `Device ${devId}`)
-          .replaceAll("{property}", prop)
-          .replaceAll("{newValue}", String(newValue))
-          .replaceAll("{oldValue}", String(oldValue));
+        let msg = msgTmpl;
+        msg = msg.split("{name}").join(devName || `Device ${devId}`);
+        msg = msg.split("{property}").join(prop);
+        msg = msg.split("{newValue}").join(String(newValue));
+        msg = msg.split("{oldValue}").join(String(oldValue));
         this.notify(msg);
       }
     },

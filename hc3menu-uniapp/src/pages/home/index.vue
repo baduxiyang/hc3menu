@@ -88,7 +88,7 @@ const isFavorite = (id: number) => favoriteSet.value.has(Number(id));
 
 type RoomPage = { key: string; name: string; devices: any[] };
 
-const safeKey = (k: string) => String(k || "").replaceAll(/[^a-zA-Z0-9_-]/g, "_");
+const safeKey = (k: string) => String(k || "").replace(/[^a-zA-Z0-9_-]/g, "_");
 const topAnchorId = (k: string) => `top-${safeKey(k)}`;
 
 const apiSections = computed(() => {
