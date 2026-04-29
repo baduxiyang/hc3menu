@@ -466,7 +466,27 @@ export const useHc3Store = defineStore("hc3", {
 
     setDimmerValue(deviceId: number, v: number) {
       const client = this.ensureClient();
-      return this.runDeviceAction(() => client.setValue(deviceId, clamp(Math.round(v), 0, 100)));
+      const next = clamp(Math.round(v), 0, 100);
+      const dev = this.devices?.[Number(deviceId)];
+      const props = dev?.properties || {};
+      const curOn = Boolean(props.value) || Boolean(props.state);
+
+      const run = async () => {
+        if (next <= 0) {
+          await client.turnOff(deviceId);
+        } else {
+          if (!curOn) await client.turnOn(deviceId);
+          await client.setValue(deviceId, next);
+        }
+        if (dev) {
+          const p = (dev.properties && typeof dev.properties === "object") ? dev.properties : {};
+          p.value = next;
+          dev.properties = p;
+          this.devices = { ...this.devices, [Number(deviceId)]: dev };
+        }
+      };
+
+      return this.runDeviceAction(run);
     },
 
     shutterOpen(deviceId: number) {
