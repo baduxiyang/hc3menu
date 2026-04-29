@@ -35,7 +35,7 @@
           scroll-y
           scroll-with-animation
           class="room-scroll"
-          :scroll-into-view="scrollIntoViewId"
+          :scroll-into-view="scrollIntoViewByPage[p.key]"
           :scroll-top="scrollTopCmdByPage[p.key]"
           @scroll="(e: any) => onRoomScroll(p.key, e)"
         >
@@ -76,7 +76,7 @@ const settings = useSettingsStore();
 
 const roomIndex = ref(0);
 const sectionIndex = ref(0);
-const scrollIntoViewId = ref("");
+const scrollIntoViewByPage = ref<Record<string, string | undefined>>({});
 const scrollTopByPage = ref<Record<string, number>>({});
 const scrollTopCmdByPage = ref<Record<string, number | undefined>>({});
 const homeTabText = ref<"Home" | "Back to Top">("Home");
@@ -146,12 +146,41 @@ const roomPages = computed<RoomPage[]>(() => {
 const currentPage = computed(() => roomPages.value[roomIndex.value]);
 const currentPageKey = computed(() => currentPage.value?.key || "");
 
+let backToTopTimer1: number | null = null;
+let backToTopTimer2: number | null = null;
+
+const clearBackToTopTimers = () => {
+  if (backToTopTimer1 != null) {
+    clearTimeout(backToTopTimer1);
+    backToTopTimer1 = null;
+  }
+  if (backToTopTimer2 != null) {
+    clearTimeout(backToTopTimer2);
+    backToTopTimer2 = null;
+  }
+};
+
 watch(roomPages, (p) => {
   if (!p.length) {
     roomIndex.value = 0;
     return;
   }
   if (roomIndex.value >= p.length) roomIndex.value = 0;
+
+  const keys = new Set(p.map((x) => x.key));
+  const keepNum = (src: Record<string, number>) => {
+    const out: Record<string, number> = {};
+    for (const k of Object.keys(src)) if (keys.has(k)) out[k] = src[k];
+    return out;
+  };
+  const keepAny = (src: Record<string, any>) => {
+    const out: Record<string, any> = {};
+    for (const k of Object.keys(src)) if (keys.has(k)) out[k] = src[k];
+    return out;
+  };
+  scrollTopByPage.value = keepNum(scrollTopByPage.value);
+  scrollTopCmdByPage.value = keepAny(scrollTopCmdByPage.value);
+  scrollIntoViewByPage.value = keepAny(scrollIntoViewByPage.value);
 });
 
 watch(apiSections, (p) => {
@@ -211,8 +240,12 @@ const openRoomPicker = () => {
 };
 
 const onSectionTap = (idx: number) => {
+  clearBackToTopTimers();
   sectionIndex.value = Number(idx) || 0;
   roomIndex.value = 0;
+  scrollIntoViewByPage.value = {};
+  scrollTopCmdByPage.value = {};
+  scrollTopByPage.value = {};
   setHomeTab("Home");
 };
 
@@ -225,21 +258,25 @@ const onRoomScroll = (key: string, e: any) => {
 const backToTop = () => {
   const key = currentPageKey.value;
   if (!key) return;
-  scrollIntoViewId.value = "";
+  clearBackToTopTimers();
+  scrollIntoViewByPage.value = { ...scrollIntoViewByPage.value, [key]: undefined };
   scrollTopCmdByPage.value = { ...scrollTopCmdByPage.value, [key]: 1 };
   scrollTopByPage.value = { ...scrollTopByPage.value, [key]: 0 };
   setHomeTab("Home");
-  setTimeout(() => {
+  backToTopTimer1 = setTimeout(() => {
+    if (!roomPages.value.some((p) => p.key === key)) return;
     scrollTopCmdByPage.value = { ...scrollTopCmdByPage.value, [key]: 0 };
-    scrollIntoViewId.value = topAnchorId(key);
-  }, 30);
+    scrollIntoViewByPage.value = { ...scrollIntoViewByPage.value, [key]: topAnchorId(key) };
+  }, 30) as unknown as number;
 
-  setTimeout(() => {
-    const next = { ...scrollTopCmdByPage.value };
-    delete next[key];
-    scrollTopCmdByPage.value = next;
-    scrollIntoViewId.value = "";
-  }, 120);
+  backToTopTimer2 = setTimeout(() => {
+    const nextTop = { ...scrollTopCmdByPage.value };
+    delete nextTop[key];
+    scrollTopCmdByPage.value = nextTop;
+    const nextInto = { ...scrollIntoViewByPage.value };
+    delete nextInto[key];
+    scrollIntoViewByPage.value = nextInto;
+  }, 160) as unknown as number;
 };
 
 onTabItemTap((e) => {
