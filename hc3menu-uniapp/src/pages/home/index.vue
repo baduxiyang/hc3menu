@@ -175,15 +175,11 @@ const virtualPages = computed(() => {
   const len = src.length;
   if (!len) return [{ slot: "prev", page: null }, { slot: "cur", page: null }, { slot: "next", page: null }];
   if (len === 1) return [{ slot: "prev", page: src[0] }, { slot: "cur", page: src[0] }, { slot: "next", page: src[0] }];
-  if (len === 2) {
-    const idx = roomIndex.value === 1 ? 1 : 0;
-    const other = idx === 0 ? 1 : 0;
-    return [{ slot: "prev", page: src[other] }, { slot: "cur", page: src[idx] }, { slot: "next", page: src[other] }];
-  }
   const idx = Math.max(0, Math.min(len - 1, roomIndex.value));
-  const prev = src[Math.max(0, idx - 1)];
   const cur = src[idx];
-  const next = src[Math.min(len - 1, idx + 1)];
+  const mod = (n: number, m: number) => ((n % m) + m) % m;
+  const prev = src[mod(idx - 1, len)];
+  const next = src[mod(idx + 1, len)];
   return [{ slot: "prev", page: prev }, { slot: "cur", page: cur }, { slot: "next", page: next }];
 });
 
@@ -318,12 +314,9 @@ const onSwiperFinish = (e: any) => {
 
   const len = roomPages.value.length;
   let next = roomIndex.value;
-  if (len === 2) {
-    next = next === 0 ? 1 : 0;
-  } else {
-    if (cur === 0) next = Math.max(0, next - 1);
-    if (cur === 2) next = Math.min(len - 1, next + 1);
-  }
+  const mod = (n: number, m: number) => ((n % m) + m) % m;
+  if (cur === 0) next = mod(next - 1, len);
+  if (cur === 2) next = mod(next + 1, len);
 
   roomIndex.value = next;
   const key = roomPages.value[next]?.key || "";
