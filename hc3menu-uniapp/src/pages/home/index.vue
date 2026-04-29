@@ -35,18 +35,19 @@
       </view>
     </view>
 
-    <swiper class="swiper" :current="roomIndex" :disable-touch="swiperDisableTouch" @change="onSwiperChange" v-if="swiperPages.length">
-      <swiper-item v-for="p in swiperPages" :key="p.key">
+    <swiper class="swiper" :current="swiperCurrent" :disable-touch="swiperDisableTouch" @change="onSwiperChange">
+      <swiper-item v-for="v in virtualPages" :key="v.slot">
         <scroll-view
-          :key="`${p.key}:${scrollViewKeyByPage[p.key] || 0}`"
+          v-if="v.page"
+          :key="`${v.slot}:${v.page.key}:${scrollViewKeyByPage[v.page.key] || 0}`"
           scroll-y
           class="room-scroll"
-          :scroll-top="scrollTopCmdByPage[p.key]"
-          @scroll="(e: any) => onRoomScroll(p.key, e)"
+          :scroll-top="scrollTopCmdByPage[v.page.key]"
+          @scroll="(e: any) => onRoomScroll(v.page!.key, e)"
         >
-          <view class="list" v-if="p.devices.length">
+          <view class="list" v-if="v.page.devices.length">
             <DeviceRow
-              v-for="d in p.devices"
+              v-for="d in v.page.devices"
               :key="d.id"
               :device="d"
               :is-favorite="isFavorite(d.id)"
@@ -59,12 +60,11 @@
           </view>
           <view class="footer-space"></view>
         </scroll-view>
+        <view v-else class="empty full">
+          <text>暂无房间或设备</text>
+        </view>
       </swiper-item>
     </swiper>
-
-    <view class="empty" v-else>
-      <text>暂无房间或设备</text>
-    </view>
   </view>
 </template>
 
@@ -80,6 +80,7 @@ const settings = useSettingsStore();
 
 const roomIndex = ref(0);
 const sectionIndex = ref(0);
+const swiperCurrent = ref(1);
 const scrollTopByPage = ref<Record<string, number>>({});
 const scrollTopCmdByPage = ref<Record<string, number | undefined>>({});
 const scrollViewKeyByPage = ref<Record<string, number | undefined>>({});
@@ -154,16 +155,22 @@ const roomPages = computed<RoomPage[]>(() => {
   return pages;
 });
 
-const swiperPages = computed<RoomPage[]>(() => {
-  if (!roomPages.value.length) return [];
-  if (roomPages.value.length >= 2) return roomPages.value;
-  return [...roomPages.value, { key: "__pad__", name: "", devices: [] }];
-});
-
 const swiperDisableTouch = computed(() => roomPages.value.length <= 1);
 
 const currentPage = computed(() => roomPages.value[roomIndex.value]);
 const currentPageKey = computed(() => currentPage.value?.key || "");
+
+const virtualPages = computed(() => {
+  const src = roomPages.value;
+  const len = src.length;
+  if (!len) return [{ slot: "prev", page: null }, { slot: "cur", page: null }, { slot: "next", page: null }];
+  if (len === 1) return [{ slot: "prev", page: src[0] }, { slot: "cur", page: src[0] }, { slot: "next", page: src[0] }];
+  const idx = Math.max(0, Math.min(len - 1, roomIndex.value));
+  const prev = src[Math.max(0, idx - 1)];
+  const cur = src[idx];
+  const next = src[Math.min(len - 1, idx + 1)];
+  return [{ slot: "prev", page: prev }, { slot: "cur", page: cur }, { slot: "next", page: next }];
+});
 
 let backToTopTimer1: number | null = null;
 let backToTopTimer2: number | null = null;
@@ -182,9 +189,11 @@ const clearBackToTopTimers = () => {
 watch(roomPages, (p) => {
   if (!p.length) {
     roomIndex.value = 0;
+    swiperCurrent.value = 1;
     return;
   }
   if (roomIndex.value >= p.length) roomIndex.value = 0;
+  swiperCurrent.value = 1;
 
   const keys = new Set(p.map((x) => x.key));
   const keepNum = (src: Record<string, number>) => {
@@ -242,13 +251,18 @@ const onSwiperChange = (e: any) => {
   const cur = Number(e?.detail?.current ?? 0);
   if (swiperDisableTouch.value) {
     roomIndex.value = 0;
+    swiperCurrent.value = 1;
     setHomeTab("Home");
     return;
   }
-  if (Number.isFinite(cur)) roomIndex.value = cur;
-  const key = roomPages.value[cur]?.key || "";
+  if (cur === 0) roomIndex.value = Math.max(0, roomIndex.value - 1);
+  if (cur === 2) roomIndex.value = Math.min(roomPages.value.length - 1, roomIndex.value + 1);
+  const key = currentPageKey.value;
   const top = scrollTopByPage.value[key] || 0;
   setHomeTab(top > 8 ? "Back to Top" : "Home");
+  setTimeout(() => {
+    swiperCurrent.value = 1;
+  }, 0);
 };
 
 const openRoomPicker = () => {
@@ -258,7 +272,10 @@ const openRoomPicker = () => {
     itemList: items,
     success: (res: any) => {
       const idx = Number(res.tapIndex ?? -1);
-      if (idx >= 0 && idx < roomPages.value.length) roomIndex.value = idx;
+      if (idx >= 0 && idx < roomPages.value.length) {
+        roomIndex.value = idx;
+        swiperCurrent.value = 1;
+      }
     },
   });
 };
@@ -267,6 +284,7 @@ const onSectionTap = (idx: number) => {
   clearBackToTopTimers();
   sectionIndex.value = Number(idx) || 0;
   roomIndex.value = 0;
+  swiperCurrent.value = 1;
   scrollTopCmdByPage.value = {};
   scrollTopByPage.value = {};
   scrollViewKeyByPage.value = {};
@@ -431,6 +449,12 @@ onHide(() => {
   padding: 40rpx 24rpx;
   color: #666;
   text-align: center;
+}
+.empty.full {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .footer-space {
   height: 60rpx;
