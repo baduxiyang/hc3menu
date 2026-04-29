@@ -13,6 +13,13 @@
       </view>
     </view>
 
+    <scroll-view scroll-x class="sections" v-if="sections.length">
+      <view class="sec-item" v-for="s in sections" :key="s.key" @click="onSection(s.key)">
+        <text class="sec-text">{{ s.label }}</text>
+        <text v-if="s.badge" class="sec-badge">{{ s.badge }}</text>
+      </view>
+    </scroll-view>
+
     <view class="room-bar" v-if="roomPages.length">
       <view class="room-title" @click="openRoomPicker">
         <text class="room-name">{{ currentPage?.name || "" }}</text>
@@ -110,6 +117,46 @@ const roomPages = computed<RoomPage[]>(() => {
 
 const currentPage = computed(() => roomPages.value[roomIndex.value]);
 
+const attentionCount = computed(() => {
+  const thr = Number(settings.config.lowBatteryThreshold ?? 20);
+  const devs = Object.values(hc3.devices || {}) as any[];
+  let n = 0;
+  for (const d of devs) {
+    const p = d?.properties || {};
+    if (p.dead) {
+      n += 1;
+      continue;
+    }
+    const b = p.batteryLevel;
+    const bn = b != null ? Number(b) : null;
+    if (bn != null && Number.isFinite(bn) && bn <= thr) n += 1;
+  }
+  return n;
+});
+
+const alarmCount = computed(() => {
+  const parts = hc3.allPartitions || [];
+  let n = 0;
+  for (const p of parts as any[]) {
+    if (p?.breached || p?.pending) n += 1;
+  }
+  return n;
+});
+
+const sections = computed(() => {
+  const out: { key: string; label: string; badge?: string }[] = [];
+  out.push({ key: "rooms", label: "Rooms" });
+  out.push({ key: "favorites", label: "Favorites", badge: favoriteDevices.value.length ? String(favoriteDevices.value.length) : "" });
+  out.push({ key: "scenes", label: "Scenes", badge: hc3.scenes?.length ? String(hc3.scenes.length) : "" });
+  out.push({ key: "alarm", label: "Alarm", badge: alarmCount.value ? String(alarmCount.value) : "" });
+  out.push({ key: "profiles", label: "Profiles" });
+  out.push({ key: "attention", label: "Attention", badge: attentionCount.value ? String(attentionCount.value) : "" });
+  out.push({ key: "activity", label: "Activity" });
+  out.push({ key: "debug", label: "Debug" });
+  out.push({ key: "diagnostics", label: "Diagnostics" });
+  return out;
+});
+
 watch(roomPages, (p) => {
   if (!p.length) {
     roomIndex.value = 0;
@@ -157,6 +204,45 @@ const openRoomPicker = () => {
   });
 };
 
+const onSection = (key: string) => {
+  if (key === "rooms") {
+    openRoomPicker();
+    return;
+  }
+  if (key === "favorites") {
+    const idx = roomPages.value.findIndex((p) => p.key === "fav");
+    if (idx >= 0) roomIndex.value = idx;
+    return;
+  }
+  if (key === "scenes") {
+    uni.navigateTo({ url: "/pages/scenes/index" });
+    return;
+  }
+  if (key === "alarm") {
+    uni.navigateTo({ url: "/pages/alarm/index" });
+    return;
+  }
+  if (key === "profiles") {
+    uni.navigateTo({ url: "/pages/profiles/index" });
+    return;
+  }
+  if (key === "attention") {
+    uni.navigateTo({ url: "/pages/attention/index" });
+    return;
+  }
+  if (key === "activity") {
+    uni.navigateTo({ url: "/pages/activity/index" });
+    return;
+  }
+  if (key === "debug") {
+    uni.navigateTo({ url: "/pages/debug/index" });
+    return;
+  }
+  if (key === "diagnostics") {
+    uni.navigateTo({ url: "/pages/diagnostics/index" });
+  }
+};
+
 onShow(() => {
   if (!settings.loaded) settings.load();
   hc3.startSync().catch(() => {});
@@ -201,6 +287,34 @@ onShow(() => {
   margin-top: 16rpx;
   display: flex;
   gap: 16rpx;
+}
+.sections {
+  white-space: nowrap;
+  margin: 0 24rpx 12rpx;
+}
+.sec-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 14rpx 18rpx;
+  margin-right: 12rpx;
+  border-radius: 999rpx;
+  background: #fff;
+}
+.sec-text {
+  font-size: 24rpx;
+  color: #111;
+}
+.sec-badge {
+  min-width: 34rpx;
+  height: 34rpx;
+  padding: 0 10rpx;
+  border-radius: 999rpx;
+  background: #ef4444;
+  color: #fff;
+  font-size: 22rpx;
+  line-height: 34rpx;
+  text-align: center;
 }
 .room-bar {
   margin: 0 24rpx 12rpx;
