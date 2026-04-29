@@ -9,19 +9,17 @@
         </view>
 
         <view v-else-if="c.type === 'select' && c.selectionType === 'single'" class="select" :style="weightStyle(c.weight)">
-          <picker :range="c.items.map((x) => x.label)" :value="c.selectedIndex" @change="(e: any) => onPickSingle(c, e)">
-            <view class="picker">{{ c.items[c.selectedIndex]?.label || c.text || c.name }}</view>
-          </picker>
+          <view class="select-row" @click="openSelect(c)">
+            <text class="select-left">{{ c.text || c.name }}</text>
+            <text class="select-right">{{ c.items[c.selectedIndex]?.label || "请选择" }}</text>
+          </view>
         </view>
 
         <view v-else-if="c.type === 'select' && c.selectionType === 'multi'" class="select" :style="weightStyle(c.weight)">
-          <view class="picker">{{ c.text || c.name }}</view>
-          <checkbox-group @change="(e: any) => onPickMulti(c, e)">
-            <label class="cb" v-for="it in c.items" :key="it.value">
-              <checkbox :value="String(it.value)" :checked="c.selectedValues.includes(String(it.value))" />
-              <text class="cb-text">{{ it.label }}</text>
-            </label>
-          </checkbox-group>
+          <view class="select-row" @click="openSelect(c)">
+            <text class="select-left">{{ c.text || c.name }}</text>
+            <text class="select-right">{{ multiSummary(c) }}</text>
+          </view>
         </view>
 
         <view v-else-if="c.type === 'button'" class="btn" :style="weightStyle(c.weight)">
@@ -35,6 +33,28 @@
           </button>
         </view>
       </template>
+    </view>
+
+    <view v-if="multiModalVisible" class="mask" @click="closeMultiModal">
+      <view class="sheet" @click.stop>
+        <view class="sheet-title">
+          <text>{{ multiModalTitle }}</text>
+        </view>
+        <scroll-view scroll-y class="sheet-body">
+          <label class="sheet-item" v-for="it in multiModalItems" :key="it.value">
+            <checkbox
+              :value="String(it.value)"
+              :checked="multiModalSelected[String(it.value)] === true"
+              @click.stop="toggleMulti(it.value)"
+            />
+            <text class="sheet-text">{{ it.label }}</text>
+          </label>
+        </scroll-view>
+        <view class="sheet-actions">
+          <button size="mini" @click="closeMultiModal">取消</button>
+          <button size="mini" @click="confirmMulti">确定</button>
+        </view>
+      </view>
     </view>
   </view>
   <view v-else class="empty">
@@ -75,6 +95,8 @@ const props = defineProps<{
 }>();
 
 const hc3 = useHc3Store();
+
+const selectState = ref<Record<string, { selectedIndex: number; selectedValues: string[] }>>({});
 
 const numWeight = (w: any): number => {
   const n = Number(w);
@@ -148,8 +170,9 @@ const rows = computed<VmRow[]>(() => {
       if (t === "select") {
         const items = toItems(c);
         const selectionType = (c?.selectionType === "multi" ? "multi" : "single") as "single" | "multi";
-        const selectedIndex = 0;
-        const selectedValues: string[] = [];
+        const st = selectState.value[name];
+        const selectedIndex = st?.selectedIndex ?? 0;
+        const selectedValues: string[] = Array.isArray(st?.selectedValues) ? st!.selectedValues : [];
         comps.push({
           type: "select",
           name,
@@ -192,16 +215,67 @@ const trigger = async (c: { eventBinding?: Record<string, RawBinding[]> }, event
   await hc3.runDeviceAction(() => hc3.ensureClient().callAction(Number(props.deviceId), actionName, args));
 };
 
-const onPickSingle = (c: any, e: any) => {
-  const idx = Number(e.detail.value ?? 0);
-  const item = c.items[idx];
-  if (!item) return;
-  trigger(c, "onToggled", item.value).catch(() => {});
+const multiSummary = (c: any) => {
+  const n = (c.selectedValues || []).length;
+  if (!n) return "请选择";
+  if (n === 1) {
+    const v = String(c.selectedValues[0]);
+    const it = (c.items || []).find((x: any) => String(x.value) === v);
+    return it?.label || "已选择 1 项";
+  }
+  return `已选择 ${n} 项`;
 };
 
-const onPickMulti = (c: any, e: any) => {
-  const vs = (e?.detail?.value || []).map((x: any) => String(x));
+const multiModalVisible = ref(false);
+const multiModalComp = ref<any | null>(null);
+const multiModalItems = ref<SelectItem[]>([]);
+const multiModalSelected = ref<Record<string, boolean>>({});
+const multiModalTitle = computed(() => multiModalComp.value?.text || multiModalComp.value?.name || "请选择");
+
+const closeMultiModal = () => {
+  multiModalVisible.value = false;
+  multiModalComp.value = null;
+  multiModalItems.value = [];
+  multiModalSelected.value = {};
+};
+
+const toggleMulti = (v: any) => {
+  const key = String(v);
+  multiModalSelected.value = { ...multiModalSelected.value, [key]: !multiModalSelected.value[key] };
+};
+
+const confirmMulti = () => {
+  const c = multiModalComp.value;
+  if (!c) return;
+  const vs = Object.keys(multiModalSelected.value).filter((k) => multiModalSelected.value[k] === true);
+  selectState.value = { ...selectState.value, [c.name]: { selectedIndex: c.selectedIndex ?? 0, selectedValues: vs } };
+  closeMultiModal();
   trigger(c, "onToggled", vs).catch(() => {});
+};
+
+const openSelect = (c: any) => {
+  if (c.selectionType === "single") {
+    const itemList = (c.items || []).map((x: any) => String(x.label || ""));
+    if (!itemList.length) return;
+    uni.showActionSheet({
+      itemList,
+      success: (res: any) => {
+        const idx = Number(res.tapIndex ?? -1);
+        const item = c.items[idx];
+        if (!item) return;
+        selectState.value = { ...selectState.value, [c.name]: { selectedIndex: idx, selectedValues: [String(item.value)] } };
+        trigger(c, "onToggled", item.value).catch(() => {});
+      },
+    });
+    return;
+  }
+
+  const selected: Record<string, boolean> = {};
+  for (const v of c.selectedValues || []) selected[String(v)] = true;
+  multiModalComp.value = c;
+  multiModalItems.value = c.items || [];
+  multiModalSelected.value = selected;
+  multiModalVisible.value = true;
 };
 
 const pressTimer = ref<number | null>(null);
@@ -267,21 +341,77 @@ const onBtnTouchCancel = (_c: any, _e: any) => {
   flex-direction: column;
   gap: 12rpx;
 }
-.cb {
+.select-row {
   display: flex;
   align-items: center;
-  gap: 10rpx;
-  padding: 8rpx 0;
+  justify-content: space-between;
+  padding: 20rpx 18rpx;
+  border-radius: 12rpx;
+  background: #f0f2f6;
+  gap: 20rpx;
 }
-.cb-text {
-  font-size: 24rpx;
-  color: #333;
+.select-left {
+  font-size: 26rpx;
+  color: #111;
+}
+.select-right {
+  font-size: 26rpx;
+  color: #007aff;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 360rpx;
 }
 .space {
   min-height: 1rpx;
 }
 .btn {
   display: flex;
+}
+.mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  z-index: 999;
+}
+.sheet {
+  width: 100%;
+  background: #fff;
+  border-top-left-radius: 20rpx;
+  border-top-right-radius: 20rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+.sheet-title {
+  font-size: 28rpx;
+  color: #111;
+  padding: 8rpx 4rpx 16rpx;
+}
+.sheet-body {
+  max-height: 60vh;
+}
+.sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 18rpx 6rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.sheet-text {
+  font-size: 26rpx;
+  color: #333;
+}
+.sheet-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
+  padding-top: 16rpx;
 }
 .empty {
   padding: 12rpx 0;
