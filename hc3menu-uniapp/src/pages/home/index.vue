@@ -22,8 +22,8 @@
       </view>
     </view>
 
-    <swiper class="swiper" :current="swiperCurrent" :disable-touch="swiperDisableTouch" @change="onSwiperChange">
-      <swiper-item v-for="v in virtualPages" :key="v.slot">
+    <swiper class="swiper" :current="swiperCurrent" :disable-touch="swiperDisableTouch" @animationfinish="onSwiperFinish">
+      <swiper-item v-for="v in virtualPages" :key="`${v.slot}:${v.page?.key || 'none'}`">
         <scroll-view
           v-if="v.page"
           :key="`${v.slot}:${v.page.key}:${scrollViewKeyByPage[v.page.key] || 0}`"
@@ -73,7 +73,7 @@ const settings = useSettingsStore();
 const roomIndex = ref(0);
 const sectionIndex = ref(0);
 const swiperCurrent = ref(1);
-const ignoreSwiperChange = ref(false);
+const swiperResetting = ref(false);
 const displayRoomKey = ref("");
 const scrollTopByPage = ref<Record<string, number>>({});
 const scrollTopCmdByPage = ref<Record<string, number | undefined>>({});
@@ -292,12 +292,19 @@ const onRefresherRestore = () => {
   refresherKey.value = "";
 };
 
-const onSwiperChange = (e: any) => {
-  if (ignoreSwiperChange.value) {
-    ignoreSwiperChange.value = false;
-    return;
-  }
-  const cur = Number(e?.detail?.current ?? 0);
+const resetSwiperToCenter = () => {
+  if (swiperResetting.value) return;
+  swiperResetting.value = true;
+  nextTick(() => {
+    swiperCurrent.value = 1;
+    setTimeout(() => {
+      swiperResetting.value = false;
+    }, 80);
+  });
+};
+
+const onSwiperFinish = (e: any) => {
+  if (swiperResetting.value) return;
   if (swiperDisableTouch.value) {
     roomIndex.value = 0;
     swiperCurrent.value = 1;
@@ -305,6 +312,8 @@ const onSwiperChange = (e: any) => {
     setHomeTab("Home");
     return;
   }
+
+  const cur = Number(e?.detail?.current ?? 1);
   if (cur === 1) return;
 
   const len = roomPages.value.length;
@@ -315,16 +324,13 @@ const onSwiperChange = (e: any) => {
     if (cur === 0) next = Math.max(0, next - 1);
     if (cur === 2) next = Math.min(len - 1, next + 1);
   }
+
   roomIndex.value = next;
   const key = roomPages.value[next]?.key || "";
   displayRoomKey.value = key;
   const top = scrollTopByPage.value[key] || 0;
   setHomeTab(top > 8 ? "Back to Top" : "Home");
-
-  ignoreSwiperChange.value = true;
-  nextTick(() => {
-    swiperCurrent.value = 1;
-  });
+  resetSwiperToCenter();
 };
 
 const openRoomPicker = () => {
