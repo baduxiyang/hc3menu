@@ -1,15 +1,11 @@
 <template>
   <view class="page">
-    <view class="card">
-      <view class="status">
-        <text class="dot" :class="{ ok: hc3.connected, bad: !hc3.connected }"></text>
-        <text class="status-text">{{ hc3.connected ? "Connected" : (hc3.lastError || "Disconnected") }}</text>
-      </view>
-      <view class="actions">
-        <button size="mini" @click="onRefresh">刷新</button>
-        <button size="mini" @click="goSearch">搜索</button>
-        <button size="mini" @click="goSettings">设置</button>
-        <button size="mini" @click="goMore">更多</button>
+    <view class="header">
+      <text class="title">HC3 Menu</text>
+      <view class="header-actions">
+        <view class="icon-btn" @click="goSearch">
+          <text class="icon">⌕</text>
+        </view>
       </view>
     </view>
 
@@ -43,6 +39,11 @@
           scroll-y
           class="room-scroll"
           :scroll-top="scrollTopCmdByPage[v.page.key]"
+          refresher-enabled
+          :refresher-triggered="refresherTriggered && refresherKey === v.page.key"
+          @refresherrefresh="() => onRefresherRefresh(v.page!.key)"
+          @refresherrestore="onRefresherRestore"
+          @refresherabort="onRefresherRestore"
           @scroll="(e: any) => onRoomScroll(v.page!.key, e)"
         >
           <view class="list" v-if="v.page.devices.length">
@@ -85,6 +86,8 @@ const scrollTopByPage = ref<Record<string, number>>({});
 const scrollTopCmdByPage = ref<Record<string, number | undefined>>({});
 const scrollViewKeyByPage = ref<Record<string, number | undefined>>({});
 const homeTabText = ref<"Home" | "Back to Top">("Home");
+const refresherTriggered = ref(false);
+const refresherKey = ref("");
 
 const HOME_TAB_INDEX = 0;
 
@@ -233,7 +236,7 @@ const toggleFav = (id: number) => {
   settings.toggleFavorite(Number(id));
 };
 
-const onRefresh = async () => {
+const doRefresh = async () => {
   if (!settings.isCredsComplete) {
     uni.showToast({ title: "请先去设置填写连接信息", icon: "none" });
     return;
@@ -243,9 +246,27 @@ const onRefresh = async () => {
   });
 };
 
-const goSettings = () => uni.navigateTo({ url: "/pages/settings/index" });
-const goMore = () => uni.switchTab({ url: "/pages/more/index" });
 const goSearch = () => uni.navigateTo({ url: "/pages/search/index" });
+
+const onRefresherRefresh = async (key: string) => {
+  if (refresherTriggered.value) return;
+  if (key !== currentPageKey.value) return;
+  const top = Number(scrollTopByPage.value[key] ?? 0);
+  if (top > 2) return;
+  refresherKey.value = key;
+  refresherTriggered.value = true;
+  try {
+    await doRefresh();
+  } finally {
+    refresherTriggered.value = false;
+    refresherKey.value = "";
+  }
+};
+
+const onRefresherRestore = () => {
+  refresherTriggered.value = false;
+  refresherKey.value = "";
+};
 
 const onSwiperChange = (e: any) => {
   const cur = Number(e?.detail?.current ?? 0);
@@ -288,6 +309,8 @@ const onSectionTap = (idx: number) => {
   scrollTopCmdByPage.value = {};
   scrollTopByPage.value = {};
   scrollViewKeyByPage.value = {};
+  refresherTriggered.value = false;
+  refresherKey.value = "";
   setHomeTab("Home");
 };
 
@@ -343,37 +366,35 @@ onHide(() => {
   display: flex;
   flex-direction: column;
 }
-.card {
+.header {
   margin: 24rpx;
   padding: 20rpx;
   background: #fff;
   border-radius: 16rpx;
-}
-.status {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  justify-content: space-between;
 }
-.dot {
-  width: 16rpx;
-  height: 16rpx;
-  border-radius: 50%;
-  background: #bbb;
+.title {
+  font-size: 30rpx;
+  color: #111;
 }
-.dot.ok {
-  background: #22c55e;
-}
-.dot.bad {
-  background: #ef4444;
-}
-.status-text {
-  font-size: 26rpx;
-  color: #333;
-}
-.actions {
-  margin-top: 16rpx;
+.header-actions {
   display: flex;
-  gap: 16rpx;
+  align-items: center;
+}
+.icon-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 999rpx;
+  background: #f0f2f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon {
+  font-size: 34rpx;
+  color: #111;
 }
 .sections {
   white-space: nowrap;
