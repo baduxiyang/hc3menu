@@ -66,7 +66,7 @@
         <text class="value">{{ brightness }}%</text>
       </view>
       <view class="row col">
-        <slider :value="brightness" min="0" max="100" @change="onBrightnessChange" />
+        <slider :value="brightness" min="0" max="100" @changing="onBrightnessChanging" @change="onBrightnessChange" />
       </view>
       <view class="row col">
         <text class="label">Hex</text>
@@ -196,15 +196,28 @@ const onSetpointSlider = (e: any) => {
 
 const brightness = computed(() => {
   const cc = device.value?.properties?.colorComponents || {};
-  const b = Number(cc?.brightness ?? device.value?.properties?.value ?? 0);
+  const b = Number(device.value?.properties?.value ?? cc?.brightness ?? 0);
   return Number.isFinite(b) ? Math.round(b) : 0;
 });
 
+const brightnessLastSentMs = ref(0);
+
+const setBrightness = (v: number, throttle: boolean) => {
+  const next = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+  if (throttle) {
+    const now = Date.now();
+    if (now - brightnessLastSentMs.value < 120) return;
+    brightnessLastSentMs.value = now;
+  }
+  hc3.setDimmerValue(deviceId.value, next).catch(() => {});
+};
+
+const onBrightnessChanging = (e: any) => {
+  setBrightness(Number(e.detail.value ?? 0), true);
+};
+
 const onBrightnessChange = (e: any) => {
-  const v = Number(e.detail.value ?? 0);
-  const cc = { ...(device.value?.properties?.colorComponents || {}) };
-  cc.brightness = Math.max(0, Math.min(100, Math.round(v)));
-  hc3.runDeviceAction(() => hc3.ensureClient().setColorComponents(deviceId.value, cc)).catch(() => {});
+  setBrightness(Number(e.detail.value ?? 0), false);
 };
 
 const parseHex = (s: string): { r: number; g: number; b: number; w: number } | null => {
