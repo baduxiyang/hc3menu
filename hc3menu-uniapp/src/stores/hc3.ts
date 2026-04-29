@@ -70,6 +70,7 @@ export const useHc3Store = defineStore("hc3", {
     qaLastNotifiedSec: {} as Record<string, number>,
     qaCrashNotified: {} as Record<number, true>,
     lastStructureRefreshSec: 0,
+    lastProfilesRefreshSec: 0,
 
     connected: false,
     lastError: "",
@@ -439,6 +440,16 @@ export const useHc3Store = defineStore("hc3", {
           if (rooms) this.rooms = Object.fromEntries((rooms || []).filter((r: any) => r && r.id != null).map((r: any) => [Number(r.id), r]));
           this.lastStructureRefreshSec = now;
         }
+
+        if (!this.lastProfilesRefreshSec) this.lastProfilesRefreshSec = now;
+        if (now - this.lastProfilesRefreshSec >= 30) {
+          const prof = await client.getProfiles().catch(() => null);
+          if (prof) {
+            this.profiles = Array.isArray((prof as any).profiles) ? (prof as any).profiles : [];
+            this.activeProfileId = (prof as any).activeProfile != null ? Number((prof as any).activeProfile) : this.activeProfileId;
+          }
+          this.lastProfilesRefreshSec = now;
+        }
       };
 
       const intervalMs = clamp(Number(settings.config.diagnosticsPollSec || 10), 5, 60) * 1000;
@@ -493,9 +504,12 @@ export const useHc3Store = defineStore("hc3", {
       return this.runDeviceAction(() => client.runScene(sceneId));
     },
 
-    setActiveProfile(profileId: number) {
+    async setActiveProfile(profileId: number) {
       const client = this.ensureClient();
-      return this.runDeviceAction(() => client.setActiveProfile(profileId));
+      const id = Number(profileId);
+      await this.runDeviceAction(() => client.setActiveProfile(id));
+      this.activeProfileId = id;
+      this.addActivity({ kind: "profile", text: `Active profile -> ${id}` });
     },
 
     armPartition(partitionId: number) {
