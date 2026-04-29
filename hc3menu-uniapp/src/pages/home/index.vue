@@ -13,9 +13,15 @@
       </view>
     </view>
 
-    <scroll-view scroll-x class="sections" v-if="apiSections.length">
-      <view class="sec-item" :class="{ active: idx === sectionIndex }" v-for="(s, idx) in apiSections" :key="s.id" @click="onSectionTap(idx)">
-        <text class="sec-text">{{ s.name || ("Section " + s.id) }}</text>
+    <scroll-view scroll-x class="sections" v-if="displaySections.length">
+      <view
+        class="sec-item"
+        :class="{ active: idx === sectionIndex }"
+        v-for="(s, idx) in displaySections"
+        :key="s.key"
+        @click="onSectionTap(idx)"
+      >
+        <text class="sec-text">{{ s.name }}</text>
       </view>
     </scroll-view>
 
@@ -86,7 +92,7 @@ const isFavorite = (id: number) => favoriteSet.value.has(Number(id));
 
 type RoomPage = { key: string; name: string; devices: any[] };
 
-const apiSections = computed(() => {
+const apiSections = computed<any[]>(() => {
   const items = (hc3.allSections || []).slice();
   items.sort((a: any, b: any) => {
     const sa = Number(a?.sortOrder ?? 0);
@@ -97,8 +103,18 @@ const apiSections = computed(() => {
   return items;
 });
 
+const displaySections = computed(() => {
+  const out: { key: string; id: number | null; name: string }[] = [];
+  out.push({ key: "all", id: null, name: "All" });
+  for (const s of apiSections.value) {
+    const id = s?.id != null ? Number(s.id) : null;
+    out.push({ key: `sec:${id ?? "x"}`, id, name: String(s?.name || `Section ${id ?? ""}`).trim() || "Section" });
+  }
+  return out;
+});
+
 const selectedSectionId = computed(() => {
-  const s = apiSections.value[sectionIndex.value];
+  const s = displaySections.value[sectionIndex.value];
   return s?.id != null ? Number(s.id) : null;
 });
 
@@ -139,12 +155,9 @@ const roomPages = computed<RoomPage[]>(() => {
 });
 
 const swiperPages = computed<RoomPage[]>(() => {
+  if (!roomPages.value.length) return [];
   if (roomPages.value.length >= 2) return roomPages.value;
-  if (roomPages.value.length === 1) return [...roomPages.value, { key: "__pad__", name: "", devices: [] }];
-  return [
-    { key: "__empty_1__", name: "", devices: [] },
-    { key: "__empty_2__", name: "", devices: [] },
-  ];
+  return [...roomPages.value, { key: "__pad__", name: "", devices: [] }];
 });
 
 const swiperDisableTouch = computed(() => roomPages.value.length <= 1);
@@ -189,7 +202,7 @@ watch(roomPages, (p) => {
   scrollViewKeyByPage.value = keepAny(scrollViewKeyByPage.value);
 });
 
-watch(apiSections, (p) => {
+watch(displaySections, (p) => {
   if (!p.length) {
     sectionIndex.value = 0;
     return;
